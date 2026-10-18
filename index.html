@@ -196,7 +196,17 @@ input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10p
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--paper);padding:10px 14px;border-radius:12px;display:flex;gap:14px;align-items:center;font-size:14px;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .toast button{all:unset;cursor:pointer;font-weight:600;color:var(--fit)}
 
-/* Team view, welcome, empty roster */
+/* Team view, sign-in, empty roster */
+.live{display:flex;align-items:center;gap:8px;margin:8px 0 0;font:600 13px/1.3 var(--f-body);color:var(--ok)}
+.live.muted{color:var(--muted)}
+.pip{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;animation:blink 2s ease-in-out infinite}
+@keyframes blink{50%{opacity:.35}}
+.btn.big{min-height:48px;font-size:16px;width:100%;justify-content:center}
+.btn:disabled{opacity:.6;cursor:default}
+.ok-text{color:var(--ok)}
+.err-text{color:var(--bad)}
+.signin-form{display:flex;flex-direction:column;gap:10px;width:100%}
+.foot .foot-btns{align-items:center;gap:14px}
 .mag.ro{cursor:default;touch-action:auto}
 .open.ro{cursor:default;animation:none;opacity:.85}
 .row.ro{grid-template-columns:34px minmax(0,1fr) auto;padding-left:8px}
@@ -238,6 +248,7 @@ input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10p
       <button id="fill" class="btn" type="button">Fill open spots</button>
       <button id="clear" class="btn" type="button">Clear field</button>
       <button id="share" class="btn primary" type="button">Publish lineup</button>
+      <a class="btn" href="#live">Team view</a>
       <button class="btn" type="button" data-act="install" data-install hidden>Install app</button>
     </div>
   </header>
@@ -270,7 +281,7 @@ input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10p
       </div>
       <div class="foot">
         <div class="foot-btns"><button id="add" class="btn" type="button">Add player</button><button id="backup" class="btn" type="button">Back up roster</button><button class="btn" type="button" data-act="restore">Restore roster</button></div>
-        <button id="reset" class="link" type="button">Start over</button>
+        <span class="foot-btns"><button id="reset" class="link" type="button">Start over</button><button id="signout" class="link" type="button">Sign out of manager</button></span>
         <input type="file" id="restoreFile" hidden>
       </div>
     </section>
@@ -278,7 +289,7 @@ input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10p
 </div>
 
 <div class="app" id="team" hidden></div>
-<div class="app" id="welcome" hidden></div>
+<div class="app" id="signin" hidden></div>
 
 <div class="sheet" id="sheet" hidden><div class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
@@ -557,7 +568,11 @@ document.addEventListener('click',e=>{
   if(justDragged){justDragged=false;return}
   const t=e.target;
   const act=t.closest('[data-act]');
-  if(act){const k=act.dataset.act;if(k==='restore') $('#restoreFile').click();else if(k==='add') $('#add').click();else if(k==='install') doInstall();return}
+  if(act){const k=act.dataset.act;
+    if(k==='restore') $('#restoreFile').click();else if(k==='add') $('#add').click();else if(k==='install') doInstall();
+    else if(k==='board') goBoard();else if(k==='refresh') loadLive(false);
+    else if(k==='preview'){closeSheet();stopLive();renderTeam(cleanLineup(lineupPayload()),'preview');show('team');scrollTo(0,0);}
+    return}
   const a=t.closest('[data-assign]'); if(a){assign(a.dataset.assign,a.dataset.spot);if(openSheet&&openSheet.kind==='pick') closeSheet();return}
   const pk=t.closest('[data-pick]'); if(pk){openPicker(pk.dataset.pick);return}
   const ed=t.closest('[data-edit]'); if(ed&&!t.closest('#panel')){openEdit(ed.dataset.edit);return}
@@ -645,8 +660,18 @@ function openPicker(spot){
   showSheet('pick',build);
 }
 
-/* ---------- publish ---------- */
-const b64e=str=>{const by=new TextEncoder().encode(str);let bin='';for(const x of by) bin+=String.fromCharCode(x);return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+/* ---------- shared lineup (published to the repo as lineup.json) ---------- */
+const GH={owner:'NichollsHD',repo:'saucers-lineup',path:'lineup.json',branch:'main'};
+const KEY_TOKEN='saucers-manager-key', KEY_LIVE='saucers-live-cache';
+const store={
+  get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},
+  set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},
+  del:k=>{try{localStorage.removeItem(k)}catch(e){}}
+};
+const getToken=()=>store.get(KEY_TOKEN)||'';
+const isManager=()=>!!getToken();
+const appURL=()=>location.origin+location.pathname;
+const safeJSON=s=>{try{return JSON.parse(s)}catch(e){return null}};
 const b64d=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4) s+='=';const bin=atob(s);return new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0)));};
 const fullName=p=>p.name.trim()||'New player';
 const callName=p=>(p.nick&&p.nick.trim())||fullName(p);
@@ -655,9 +680,15 @@ function lineupPayload(){
     b:inOrder().map(id=>{const p=byId(id);return [shortName(p),fullName(p),spotOf(id)||'']}),
     o:state.order.map(byId).filter(p=>p&&!p.in).map(callName)};
 }
-const lineupCode=()=>b64e(JSON.stringify(lineupPayload()));
-const lineupURL=code=>location.origin+location.pathname+'#lineup='+code;
-function lineupText(url){
+function cleanLineup(o){
+  if(!o||o.v!==1||!Array.isArray(o.b)) return null;
+  const of=o.of===3?3:4, str=(x,n)=>typeof x==='string'?x.slice(0,n):'';
+  const b=o.b.filter(Array.isArray).slice(0,40).map(e=>{const d=str(e[0],40)||'Player';return [d,str(e[1],60)||d,ORDER[of].includes(e[2])?e[2]:'']});
+  const out=Array.isArray(o.o)?o.o.map(x=>str(x,60)).filter(Boolean).slice(0,40):[];
+  return {of,b,o:out,t:str(o.t,80),d:typeof o.d==='number'?o.d:0};
+}
+const decodeLineup=code=>{try{return cleanLineup(JSON.parse(b64d(code)))}catch(e){return null}};
+function lineupText(){
   const note=(state.note||'').trim();
   const lines=['*Sunday Saucers lineup*'];
   if(note) lines.push(note);
@@ -667,37 +698,53 @@ function lineupText(url){
   if(open.length) lines.push('','Still need: '+open.join(', '));
   const out=state.order.map(byId).filter(p=>p&&!p.in);
   if(out.length) lines.push('','Out: '+out.map(callName).join(', '));
-  lines.push('','Field view: '+url);
+  lines.push('','Field view: '+appURL());
   return lines.join('\n');
 }
-function decodeLineup(code){
-  try{
-    const o=JSON.parse(b64d(code));
-    if(!o||o.v!==1||!Array.isArray(o.b)) return null;
-    const of=o.of===3?3:4, str=(x,n)=>typeof x==='string'?x.slice(0,n):'';
-    const b=o.b.filter(Array.isArray).slice(0,40).map(e=>{const d=str(e[0],40)||'Player';return [d,str(e[1],60)||d,ORDER[of].includes(e[2])?e[2]:'']});
-    const out=Array.isArray(o.o)?o.o.map(x=>str(x,60)).filter(Boolean).slice(0,40):[];
-    return {of,b,o:out,t:str(o.t,80),d:typeof o.d==='number'?o.d:0};
-  }catch(e){return null}
+
+/* ---------- GitHub publishing (manager only) ---------- */
+const ghURL=()=>`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`;
+const ghHeaders=t=>({Authorization:'Bearer '+(t||getToken()),Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'});
+function ghError(status){
+  if(status===401) return 'GitHub rejected your manager key. It may have expired. Sign out and sign in with a new key.';
+  if(status===403||status===404) return "Your manager key can't update the repo. Check it has Contents set to Read and write for saucers-lineup.";
+  if(status===0) return 'No connection. Try again when you have signal.';
+  return 'GitHub had a problem ('+status+'). Try again in a minute.';
 }
+async function ghPublish(payload){
+  const toB64=s=>{const by=new TextEncoder().encode(s);let bin='';for(const x of by) bin+=String.fromCharCode(x);return btoa(bin);};
+  for(let attempt=0;attempt<2;attempt++){
+    let g,p,sha;
+    try{g=await fetch(ghURL()+'?ref='+GH.branch,{headers:ghHeaders(),cache:'no-store'});}catch(e){throw ghError(0)}
+    if(g.ok) sha=(await g.json()).sha; else if(g.status!==404) throw ghError(g.status);
+    const body={message:'Publish lineup'+(payload.t?': '+payload.t:''),content:toB64(JSON.stringify(payload)),branch:GH.branch};
+    if(sha) body.sha=sha;
+    try{p=await fetch(ghURL(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});}catch(e){throw ghError(0)}
+    if(p.ok) return;
+    if(p.status!==409&&p.status!==422) throw ghError(p.status);
+  }
+  throw ghError(409);
+}
+const fmtTime=d=>new Date(d).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 function openShare(){
   if(!state.players.length){toast('Load your roster first');return}
   const build=()=>{
     $('#panel').innerHTML=`
       <div class="sheet-head"><h3 id="sheetTitle">Publish lineup</h3><button class="btn" type="button" data-close>Done</button></div>
       <label class="fld"><span>Game note</span><input type="text" id="gNote" value="${esc(state.note||'')}" placeholder="Sun 9:00 AM vs. Bombers" autocomplete="off"><small>Optional. Shows at the top of the team's view.</small></label>
-      <div class="fld"><span>Message</span><textarea class="msg" id="msgText" aria-label="Lineup message"></textarea>
-        <small>Edit anything before sending. The link at the bottom opens the field view for the team.</small></div>
+      <div class="fld"><button class="btn primary big" type="button" id="pubBtn">Publish to team</button>
+        <small id="pubStatus">Updates the lineup at the team link. Anyone with it open sees the change within about a minute.</small></div>
+      <div class="fld"><span>Tell the chat</span><textarea class="msg" id="msgText" aria-label="Message for the team chat"></textarea>
+        <small>The link at the bottom always shows the latest lineup, so it's the same link every week.</small></div>
       <div class="share-actions">
-        ${navigator.share?'<button class="btn primary" type="button" id="shareNative">Share</button>':''}
-        <a class="btn${navigator.share?'':' primary'}" id="waLink" target="_blank" rel="noopener" href="#">WhatsApp</a>
+        ${navigator.share?'<button class="btn" type="button" id="shareNative">Share</button>':''}
+        <a class="btn" id="waLink" target="_blank" rel="noopener" href="#">WhatsApp</a>
         <button class="btn" type="button" id="copyMsg">Copy message</button>
-        <a class="btn" id="previewLink" href="#">Preview team view</a>
-      </div>`;
-    const ta=$('#msgText'), wa=$('#waLink'), pv=$('#previewLink'), note=$('#gNote');
-    let code='';
+      </div>
+      <button type="button" class="link" data-act="preview">Preview the team view</button>`;
+    const ta=$('#msgText'), wa=$('#waLink'), note=$('#gNote'), pub=$('#pubBtn'), st=$('#pubStatus');
     const setWa=()=>{wa.href='https://wa.me/?text='+encodeURIComponent(ta.value);};
-    const refresh=()=>{code=lineupCode();ta.value=lineupText(lineupURL(code));setWa();};
+    const refresh=()=>{ta.value=lineupText();setWa();};
     refresh();
     note.oninput=()=>{state.note=note.value;save();refresh();};
     ta.oninput=setWa;
@@ -707,7 +754,20 @@ function openShare(){
       const fallback=()=>{ta.focus();ta.select();toast('Press and hold to copy the selected text');};
       try{navigator.clipboard.writeText(ta.value).then(done,fallback);}catch(e){fallback();}
     };
-    pv.onclick=e=>{e.preventDefault();closeSheet();location.hash='lineup='+code;};
+    pub.onclick=async()=>{
+      pub.disabled=true; pub.textContent='Publishing…'; st.className=''; st.textContent='Sending to GitHub…';
+      const payload=lineupPayload();
+      try{
+        await ghPublish(payload);
+        store.set(KEY_LIVE,JSON.stringify(payload));
+        pub.textContent='Published'; st.className='ok-text';
+        st.textContent='Published at '+fmtTime(payload.d)+'. The team link updates within about a minute.';
+        toast('Published to the team');
+        setTimeout(()=>{if(document.contains(pub)){pub.disabled=false;pub.textContent='Publish again';}},2500);
+      }catch(err){
+        pub.disabled=false; pub.textContent='Publish to team'; st.className='err-text'; st.textContent=String(err);
+      }
+    };
   };
   showSheet('share',build);
 }
@@ -763,14 +823,24 @@ const fmtWhen=d=>new Date(d).toLocaleString([],{weekday:'short',month:'short',da
 function installCard(){
   if(isStandalone()) return '';
   return `<section class="install-card"><div><b>Keep it on your home screen</b>
-    <span>${isIOS?'In Safari, tap Share, then Add to Home Screen.':'In Chrome, tap the ⋮ menu, then Install app.'} New lineups still come as links in the team chat.</span></div>
+    <span>${isIOS?'In Safari, tap Share, then Add to Home Screen.':'In Chrome, tap the ⋮ menu, then Install app.'} It always opens to the latest lineup.</span></div>
     <button class="btn primary" type="button" data-act="install" data-install ${installEvt?'':'hidden'}>Install</button></section>`;
 }
-function renderTeam(Lu,stale){
+let teamMode='';
+function renderTeam(Lu,mode){
+  teamMode=mode;
   const el=$('#team');
+  const head=t=>`<header class="top"><div><p class="eyebrow">Sunday Saucers</p><h1>${t}</h1>`;
+  const foot=`${installCard()}<p class="team-foot">${isManager()?'<button type="button" class="link" data-act="board">Back to the board</button>':'<a class="link" href="#board">Manager sign-in</a>'}</p>`;
   if(!Lu){
-    el.innerHTML=`<header class="top"><div><p class="eyebrow">Sunday Saucers</p><h1>Link didn't load</h1></div></header>
-      <p class="note">This lineup link is incomplete. It may have been cut off when it was copied. Ask for a fresh link in the team chat.</p>`;
+    const msg={
+      loading:['Loading lineup','Getting the latest lineup…'],
+      none:['No lineup yet','Nothing has been posted yet. Check back closer to game time.'],
+      unreachable:["Can't reach the lineup",'Check your connection. The lineup loads as soon as you have signal.']
+    }[mode]||["Link didn't load",'This older lineup link is incomplete. It may have been cut off when it was copied.'];
+    const retry=(mode==='none'||mode==='unreachable')?'<button class="btn" type="button" data-act="refresh">Try again</button>':'';
+    const latest=(mode==='legacy')?'<a class="btn primary" href="./">Open the latest lineup</a>':'';
+    el.innerHTML=head(msg[0])+`</div></header><p class="note">${msg[1]}</p><div class="foot-btns">${retry}${latest}</div>`+foot;
     return;
   }
   const sp=SPOTS[Lu.of], taken={};
@@ -787,11 +857,17 @@ function renderTeam(Lu,stale){
     return `<li class="row ro"><span class="bnum">${i+1}</span><span class="rname"><b>${esc(full)}</b>${alt?`<small>${esc(d)}</small>`:''}</span><span class="where${s?'':' bench'}">${s?L(s):'Bench'}</span></li>`;
   }).join('');
   const open=ORDER[Lu.of].filter(s=>!s.startsWith('DH')&&!taken[s]);
-  el.innerHTML=`
-    <header class="top"><div><p class="eyebrow">Sunday Saucers</p><h1>${stale?'Last lineup':'Lineup'}</h1>
+  const status={
+    live:'<p class="live"><i class="pip"></i>Live. Checks for changes every minute.</p>',
+    saved:'<p class="live muted">Checking for updates…</p>',
+    offline:"<p class=\"note\">You're offline. Showing the last lineup you loaded.</p>",
+    preview:'<p class="note">Preview of what the team sees. Publish to send it to the team link.</p>',
+    legacy:'<p class="note">This is an older lineup link. <a href="./">Open the latest lineup</a></p>'
+  }[mode]||'';
+  el.innerHTML=head('Lineup')+`
       ${Lu.t?`<p class="game-note">${esc(Lu.t)}</p>`:''}
-      <p class="meta">${Lu.d?'Posted '+esc(fmtWhen(Lu.d))+' · ':''}${Lu.b.length} players in today</p></div></header>
-    ${stale?'<p class="note">This is the last lineup you opened. New lineups come as links in the team chat.</p>':''}
+      <p class="meta">${Lu.d?'Posted '+esc(fmtWhen(Lu.d))+' · ':''}${Lu.b.length} players in today</p>${mode==='live'||mode==='saved'?status:''}</div></header>
+    ${mode==='live'||mode==='saved'?'':status}
     <main class="grid">
       <section class="col" aria-label="Defense">
         <div class="field">${FIELD_SVG('t')}<div>${slots}</div></div>
@@ -802,33 +878,89 @@ function renderTeam(Lu,stale){
         <ol class="lineup">${rows||'<li class="empty-roster"><span>No players listed.</span></li>'}</ol>
         ${Lu.o.length?`<p class="meta">Out today: ${Lu.o.map(esc).join(', ')}</p>`:''}
       </section>
-    </main>
-    ${installCard()}
-    <p class="team-foot"><a class="link" href="#board">Manage the board</a></p>`;
+    </main>`+foot;
 }
-function renderWelcome(){
-  $('#welcome').innerHTML=`
-    <header class="top"><div><p class="eyebrow">Sunday Saucers</p><h1>Lineup</h1></div></header>
+
+/* ---------- live loading ---------- */
+let liveActive=false, liveTimer=null, liveShown=0;
+async function loadLive(quiet){
+  let raw=null, Lu=null, mode='live';
+  try{
+    const r=await fetch(GH.path+'?t='+Date.now(),{cache:'no-store'});
+    if(r.status===404){if(liveActive&&!liveShown) renderTeam(null,'none');return}
+    if(!r.ok) throw 0;
+    raw=await r.text(); Lu=cleanLineup(safeJSON(raw)); if(!Lu) throw 0;
+    store.set(KEY_LIVE,raw);
+  }catch(e){
+    const c=store.get(KEY_LIVE); Lu=c&&cleanLineup(safeJSON(c)); mode='offline';
+    if(!Lu){if(liveActive&&!liveShown) renderTeam(null,'unreachable');return}
+  }
+  if(!liveActive) return;
+  if(quiet&&liveShown===Lu.d&&teamMode===mode) return;
+  const changed=liveShown&&liveShown!==Lu.d;
+  const y=scrollY;
+  liveShown=Lu.d; renderTeam(Lu,mode);
+  if(quiet) scrollTo(0,y);
+  if(changed) toast('Lineup updated');
+}
+function showLive(){
+  liveActive=true; liveShown=0;
+  const c=store.get(KEY_LIVE), Lu=c&&cleanLineup(safeJSON(c));
+  renderTeam(Lu||null,Lu?'saved':'loading');
+  show('team'); scrollTo(0,0);
+  loadLive(false);
+  clearInterval(liveTimer);
+  liveTimer=setInterval(()=>{if(document.visibilityState==='visible') loadLive(true);},60000);
+}
+function stopLive(){liveActive=false;clearInterval(liveTimer);liveTimer=null;}
+document.addEventListener('visibilitychange',()=>{if(liveActive&&document.visibilityState==='visible') loadLive(true);});
+
+/* ---------- manager sign-in ---------- */
+function renderSignin(){
+  $('#signin').innerHTML=`
+    <header class="top"><div><p class="eyebrow">Sunday Saucers</p><h1>Manager sign-in</h1></div></header>
     <div class="welcome">
-      <section class="wcard"><b>Playing?</b><span>Lineups come as links in the WhatsApp chat. Tap the latest one to see where you're batting and playing.</span></section>
-      <section class="wcard"><b>Running the team?</b><span>Set up the board, load the roster, then publish lineups to the chat.</span><a class="btn primary" href="#board">Set up the board</a></section>
-    </div>
-    ${installCard()}`;
+      <section class="wcard">
+        <span>Only the team manager can change the lineup. Paste your manager key to unlock the board on this device.</span>
+        <form id="signinForm" class="signin-form">
+          <label class="fld"><span>Manager key</span><input type="password" id="tokenIn" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+          <button class="btn primary" type="submit" id="signinBtn">Unlock the board</button>
+          <small id="signinMsg" class="err-text" role="status"></small>
+        </form>
+      </section>
+      <a class="link" href="./">Back to the lineup</a>
+    </div>`;
+  $('#signinForm').onsubmit=async e=>{
+    e.preventDefault();
+    const t=$('#tokenIn').value.trim(), btn=$('#signinBtn'), msg=$('#signinMsg');
+    if(!t){msg.textContent='Paste your manager key first.';return}
+    btn.disabled=true; btn.textContent='Checking…'; msg.textContent='';
+    try{
+      let r; try{r=await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}`,{headers:ghHeaders(t),cache:'no-store'});}catch(err){throw ghError(0)}
+      if(!r.ok) throw ghError(r.status);
+      store.set(KEY_TOKEN,t);
+      toast('Board unlocked on this device');
+      render(); show('editor'); scrollTo(0,0);
+    }catch(err){msg.textContent=String(err);btn.disabled=false;btn.textContent='Unlock the board';}
+  };
 }
 
 /* ---------- routing ---------- */
-const LAST='saucers-last-lineup';
-const getLast=()=>{try{return localStorage.getItem(LAST)}catch(e){return null}};
-const setLast=v=>{try{localStorage.setItem(LAST,v)}catch(e){}};
-function show(id){['editor','team','welcome'].forEach(x=>{$('#'+x).hidden=x!==id;});}
+function show(id){['editor','team','signin'].forEach(x=>{$('#'+x).hidden=x!==id;});}
+function goBoard(){
+  if(location.hash!=='#board'){location.hash='board';return}
+  stopLive(); if(isManager()){render();show('editor');}else{renderSignin();show('signin');}
+  scrollTo(0,0);
+}
 function route(){
   if(openSheet) closeSheet();
-  const m=location.hash.match(/^#lineup=([A-Za-z0-9_-]+)$/);
-  if(m){const Lu=decodeLineup(m[1]);if(Lu) setLast(m[1]);renderTeam(Lu,false);show('team');scrollTo(0,0);return}
-  if(location.hash==='#board'||state.players.length){render();show('editor');return}
-  const last=getLast(), Lu=last&&decodeLineup(last);
-  if(Lu){renderTeam(Lu,true);show('team');return}
-  renderWelcome();show('welcome');
+  stopLive();
+  const h=location.hash;
+  const m=h.match(/^#lineup=([A-Za-z0-9_-]+)$/);
+  if(m){const Lu=decodeLineup(m[1]);renderTeam(Lu,'legacy');show('team');scrollTo(0,0);return}
+  if(h==='#board'){if(isManager()){render();show('editor');}else{renderSignin();show('signin');}scrollTo(0,0);return}
+  if(h==='#live'||!isManager()){showLive();return}
+  render();show('editor');
 }
 addEventListener('hashchange',route);
 
@@ -843,6 +975,11 @@ function toast(msg,action,fn){
 
 $('#field').insertAdjacentHTML('afterbegin',FIELD_SVG('e'));
 $('#backup').onclick=backup;
+let signoutArmed=false;
+$('#signout').onclick=()=>{
+  if(!signoutArmed){signoutArmed=true;$('#signout').textContent='Tap again to sign out';setTimeout(()=>{signoutArmed=false;$('#signout').textContent='Sign out of manager'},3000);return}
+  store.del(KEY_TOKEN);toast('Signed out. This device can no longer publish.');location.hash='live';
+};
 $('#restoreFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f) restore(f);};
 sanitize(); route();
 if('serviceWorker' in navigator) addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});

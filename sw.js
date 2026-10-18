@@ -1,6 +1,6 @@
 // Saucers Lineup service worker: keeps the app working offline at the field.
 // Bump CACHE when you publish a new version so phones pick up the update.
-const CACHE = 'saucers-v1';
+const CACHE = 'saucers-v2';
 const CORE = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 
@@ -18,6 +18,9 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+
+  // The published lineup always comes straight from the network so the team sees changes.
+  if (url.origin === self.location.origin && url.pathname.endsWith('/lineup.json')) return;
 
   // Pages: try the network for the newest version, fall back to the saved copy after 3.5s or when offline.
   if (req.mode === 'navigate') {
