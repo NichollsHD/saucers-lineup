@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Saucers Lineup</title>
+<meta name="description" content="Sunday Saucers lineup and defense board">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef0eb">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121511">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Saucers">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: a coach's magnetic lineup board. Field diagram with magnets, bench tray under it, batting card beside (desktop) or below (phone). */
+:root{
+  color-scheme:light;
+  --paper:#eef0eb; --card:#fbfcf9; --ink:#1b1f18; --muted:#5d6459; --line:#d5d9cf;
+  --sauce:#c42a2f; --sauce-ink:#ffffff;
+  --grass:#4d8a42; --grass-2:#57954c; --infield-grass:#5a9a4f; --dirt:#c99a6c; --chalk:#f7f7f1; --fence:#2e5a29;
+  --ok:#1f7a45; --ok-bg:#dff0e3; --warn:#9a6200; --warn-bg:#fbefd4; --bad:#b3262b; --bad-bg:#f8e1df;
+  --mag:#ffffff; --mag-ink:#1b1f18; --mag-sub:#676d62; --mag-warn:#f0a400;
+  --fit:#b9ff8f; --open-bg:rgba(15,25,12,.35); --open-glow:rgba(255,96,88,.6);
+  --shadow:0 1px 0 rgba(0,0,0,.08),0 4px 10px rgba(16,28,12,.22);
+  --backdrop:rgba(10,12,9,.45);
+  --f-display:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121511; --card:#1a1e18; --ink:#e7ebe2; --muted:#9aa395; --line:#2d3329;
+    --sauce:#e5484d; --sauce-ink:#ffffff;
+    --grass:#2b5928; --grass-2:#31622e; --infield-grass:#336730; --dirt:#86643f; --chalk:#e8e8de; --fence:#1b3719;
+    --ok:#62cc88; --ok-bg:#16301f; --warn:#e8b14c; --warn-bg:#35290f; --bad:#ff7d80; --bad-bg:#3a1719;
+    --mag:#f3f4ef; --mag-ink:#161a14; --mag-sub:#62695e; --mag-warn:#f0a400;
+    --shadow:0 1px 0 rgba(0,0,0,.3),0 5px 12px rgba(0,0,0,.45);
+    --backdrop:rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121511; --card:#1a1e18; --ink:#e7ebe2; --muted:#9aa395; --line:#2d3329;
+  --sauce:#e5484d; --sauce-ink:#ffffff;
+  --grass:#2b5928; --grass-2:#31622e; --infield-grass:#336730; --dirt:#86643f; --chalk:#e8e8de; --fence:#1b3719;
+  --ok:#62cc88; --ok-bg:#16301f; --warn:#e8b14c; --warn-bg:#35290f; --bad:#ff7d80; --bad-bg:#3a1719;
+  --mag:#f3f4ef; --mag-ink:#161a14; --mag-sub:#62695e; --mag-warn:#f0a400;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 5px 12px rgba(0,0,0,.45);
+  --backdrop:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--paper);-webkit-text-size-adjust:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+a.btn{display:inline-flex;align-items:center;text-decoration:none}
+body{background:var(--paper);color:var(--ink);font:400 15px/1.45 var(--f-body)}
+body.dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--sauce);outline-offset:2px}
+
+.app{max-width:1120px;margin:0 auto;padding-block:16px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px;margin-bottom:16px}
+.eyebrow{font:700 13px/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--sauce);margin:0 0 4px}
+h1{font:700 34px/1 var(--f-display);margin:0;letter-spacing:.01em;text-wrap:balance}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:600 14px/1 var(--f-body);padding:0 14px;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--sauce);color:var(--sauce-ink);border-color:transparent}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.seg button{border:0;background:transparent;min-height:38px;padding:0 12px;font:700 14px/1 var(--f-display);letter-spacing:.06em;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+.grid{display:grid;gap:22px}
+@media (min-width:880px){.grid{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+h2{font:700 14px/1 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;gap:8px;align-items:baseline}
+h2 .ct{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* Field */
+.field{position:relative;width:100%;max-width:560px;margin-inline:auto;aspect-ratio:1/1;border-radius:18px;overflow:hidden;background:var(--fence);box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.field svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.slot{position:absolute;transform:translate(-50%,-50%);z-index:1;transition:opacity .15s}
+.mag{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:68px;max-width:98px;min-height:40px;padding:4px 5px 4px;background:var(--mag);color:var(--mag-ink);border-radius:7px;border-top:4px solid var(--sauce);box-shadow:var(--shadow);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab;transition:transform .12s,box-shadow .12s,opacity .12s}
+.mag .num{position:absolute;top:-10px;left:-8px;width:21px;height:21px;border-radius:50%;background:var(--sauce);color:var(--sauce-ink);font:700 13px/21px var(--f-display);text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.mag .nm{font:700 15px/1.05 var(--f-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.mag .ps{font:600 11px/1.1 var(--f-display);letter-spacing:.06em;color:var(--mag-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.mag.warn{border-top-color:var(--mag-warn)}
+.mag.warn::after{content:"!";position:absolute;top:-10px;right:-8px;width:19px;height:19px;border-radius:50%;background:var(--mag-warn);color:#1b1500;font:700 13px/19px var(--f-display);text-align:center}
+.mag.lifted{opacity:.3}
+.open{display:grid;place-items:center;width:52px;height:40px;border-radius:9px;border:2px dashed var(--chalk);background:var(--open-bg);color:var(--chalk);font:700 15px/1 var(--f-display);letter-spacing:.05em;cursor:pointer;animation:pulse 2.2s ease-in-out infinite;transition:transform .12s,box-shadow .12s}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--open-glow)}50%{box-shadow:0 0 0 7px rgba(255,96,88,0)}}
+body.dragging .slot.ok .mag,body.dragging .slot.ok .open{box-shadow:0 0 0 3px var(--fit),var(--shadow);animation:none}
+body.dragging .slot.no{opacity:.45}
+.slot.over .mag,.slot.over .open{transform:scale(1.14)}
+body.dragging .slot.over.no .mag,body.dragging .slot.over.no .open{box-shadow:0 0 0 3px var(--mag-warn)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);justify-content:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* Status */
+.status{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.stat-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.count{font:700 22px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.count small{font:600 14px var(--f-body);color:var(--muted);margin-left:4px}
+.pill{font:700 13px/1 var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:999px}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.issue{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:14px}
+.tag{font:700 13px/1 var(--f-display);letter-spacing:.05em;padding:5px 7px;border-radius:6px;min-width:38px;text-align:center}
+.tag.bad{background:var(--bad-bg);color:var(--bad)}
+.tag.warn{background:var(--warn-bg);color:var(--warn)}
+.cand{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 10px;font:600 13px/1.2 var(--f-body);cursor:pointer}
+.cand:hover{border-color:var(--ok);color:var(--ok)}
+.meta{margin:0;font-size:13px;color:var(--muted)}
+
+/* Bench */
+.bench{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px 16px;transition:box-shadow .12s}
+.bench.over{box-shadow:0 0 0 3px var(--sauce)}
+.bench-chips{display:flex;flex-wrap:wrap;gap:16px 12px;padding-top:16px;min-height:52px}
+.bench .mag{width:auto;min-width:70px;max-width:130px}
+.empty-note{color:var(--muted);font-size:14px;margin:0}
+
+/* Lineup */
+.note{margin:0;font-size:13px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:8px 10px}
+.lineup{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{position:relative;display:grid;grid-template-columns:34px 24px minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 12px 6px 2px;border-top:1px solid var(--line);min-height:54px}
+.row:first-child{border-top:0}
+.row.lifted{opacity:.35}
+.row.ins-before::before,.row.ins-after::after{content:"";position:absolute;left:10px;right:10px;height:3px;border-radius:2px;background:var(--sauce);z-index:2}
+.row.ins-before::before{top:-2px}
+.row.ins-after::after{bottom:-2px}
+.grip{display:grid;place-items:center;width:34px;height:44px;color:var(--muted);touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.bnum{font:700 20px/1 var(--f-display);color:var(--sauce);text-align:center;font-variant-numeric:tabular-nums}
+.rname{all:unset;cursor:pointer;min-width:0;display:flex;flex-direction:column;gap:1px;padding:4px 0}
+.rname:focus-visible{outline:2px solid var(--sauce);outline-offset:2px;border-radius:4px}
+.rname b{font:600 16px/1.2 var(--f-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rname small{font:600 12px/1.2 var(--f-display);letter-spacing:.06em;color:var(--muted)}
+.where{font:700 13px/1 var(--f-display);letter-spacing:.05em;padding:6px 9px;border-radius:999px;background:var(--ok-bg);color:var(--ok);white-space:nowrap}
+.where.bench{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.where.warn{background:var(--warn-bg);color:var(--warn)}
+.where.out{background:transparent;color:var(--muted)}
+.outs .row{grid-template-columns:minmax(0,1fr) auto;padding-left:14px;opacity:.75}
+.foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}
+.link{all:unset;cursor:pointer;color:var(--muted);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.link:focus-visible{outline:2px solid var(--sauce);outline-offset:2px}
+
+/* Ghost */
+.ghost{position:fixed;left:0;top:0;z-index:100;pointer-events:none;transform:translate(-50%,-60%) scale(1.1) rotate(-3deg);box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.ghost .ps{max-width:130px}
+
+/* Sheet */
+.sheet{position:fixed;inset:0;z-index:50;background:var(--backdrop);display:flex;align-items:flex-end;justify-content:center}
+.panel{background:var(--card);color:var(--ink);width:100%;max-width:500px;max-height:86vh;overflow:auto;border-radius:18px 18px 0 0;padding-top:18px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+@media (min-width:640px){.sheet{align-items:center}.panel{border-radius:18px}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.sheet-head h3{font:700 24px/1.1 var(--f-display);margin:0}
+.fld{display:flex;flex-direction:column;gap:8px}
+.fld>span{font:700 13px/1 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fld small{color:var(--muted);font-size:12px}
+input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-width:48px;min-height:40px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font:700 15px/1 var(--f-display);letter-spacing:.05em;cursor:pointer;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip.fit{border-color:var(--ok)}
+.chip.here{background:var(--sauce);color:var(--sauce-ink);border-color:var(--sauce)}
+.chip:disabled{opacity:.4;cursor:not-allowed}
+.switch-row{display:flex;justify-content:space-between;align-items:center}
+.switch{width:52px;height:30px;border-radius:999px;border:0;background:var(--line);position:relative;cursor:pointer}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.switch[aria-checked="true"]{background:var(--ok)}
+.switch[aria-checked="true"]::after{transform:translateX(22px)}
+.danger{all:unset;cursor:pointer;color:var(--bad);font:600 14px var(--f-body);align-self:flex-start;padding:6px 0}
+.pick-group{display:flex;flex-direction:column;gap:6px}
+.pick{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);cursor:pointer}
+.pick:hover{border-color:var(--muted)}
+.pick b{font:600 16px var(--f-body)}
+.pick small{font:600 12px var(--f-display);letter-spacing:.06em;color:var(--muted);white-space:nowrap}
+.pick.fit{border-color:var(--ok)}
+.pick.fit small{color:var(--ok)}
+
+/* Share */
+.btn.wa{border-color:var(--ok);color:var(--ok)}
+.msg{font:500 14px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;width:100%;min-height:260px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);resize:vertical;white-space:pre}
+.share-actions{display:flex;flex-wrap:wrap;gap:8px}
+.share-actions .btn{display:inline-flex;align-items:center;text-decoration:none}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--paper);padding:10px 14px;border-radius:12px;display:flex;gap:14px;align-items:center;font-size:14px;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast button{all:unset;cursor:pointer;font-weight:600;color:var(--fit)}
+
+/* Team view, welcome, empty roster */
+.mag.ro{cursor:default;touch-action:auto}
+.open.ro{cursor:default;animation:none;opacity:.85}
+.row.ro{grid-template-columns:34px minmax(0,1fr) auto;padding-left:8px}
+.row.ro .rname{cursor:default}
+.game-note{margin:6px 0 0;font:600 17px/1.3 var(--f-body)}
+.top .meta{margin-top:6px}
+.meta.center{text-align:center}
+.app>.note{margin:0 0 16px}
+.install-card{margin-top:22px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.install-card div{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
+.install-card span{color:var(--muted);font-size:14px}
+.team-foot{margin:22px 0 0;text-align:center}
+.welcome{display:grid;gap:14px;max-width:560px}
+.wcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.wcard b{font:700 22px/1.1 var(--f-display)}
+.wcard span{color:var(--muted)}
+.empty-roster{display:flex;flex-direction:column;gap:6px;padding:18px 16px}
+.empty-roster b{font:700 20px/1.1 var(--f-display)}
+.empty-roster span{color:var(--muted);font-size:14px}
+.empty-actions,.foot-btns{display:flex;flex-wrap:wrap;gap:8px}
+.empty-actions{margin-top:6px}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app" id="editor" hidden>
+  <header class="top">
+    <div>
+      <p class="eyebrow">Sunday Saucers</p>
+      <h1>Lineup Board</h1>
+    </div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Outfielders">
+        <button id="of3" type="button" aria-pressed="false">3 OF</button>
+        <button id="of4" type="button" aria-pressed="true">4 OF</button>
+      </div>
+      <button id="fill" class="btn" type="button">Fill open spots</button>
+      <button id="clear" class="btn" type="button">Clear field</button>
+      <button id="share" class="btn primary" type="button">Publish lineup</button>
+      <button class="btn" type="button" data-act="install" data-install hidden>Install app</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="col" aria-label="Defense">
+      <div class="field" id="field">
+        
+        <div id="slots"></div>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span><i class="dot" style="background:var(--sauce)"></i>Batting spot</span>
+        <span><i class="dot" style="background:var(--mag-warn)"></i>Out of position</span>
+        <span><i class="dot" style="border:2px dashed var(--muted)"></i>Open spot</span>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+      <section class="bench" id="bench" data-drop="bench" aria-label="Bench">
+        <h2>Bench <span class="ct" id="benchCt"></span></h2>
+        <div class="bench-chips" id="benchChips"></div>
+      </section>
+    </section>
+
+    <section class="col" aria-label="Batting order">
+      <h2>Batting order <span class="ct" id="lineCt"></span></h2>
+      <p class="note" id="sampleNote" hidden>Starting lineup is a suggestion built from the positions you listed. Drag magnets to change it.</p>
+      <ol class="lineup" id="lineup"></ol>
+      <div id="outWrap" hidden>
+        <h2 style="margin:6px 0 10px">Out today <span class="ct" id="outCt"></span></h2>
+        <ol class="lineup outs" id="outs"></ol>
+      </div>
+      <div class="foot">
+        <div class="foot-btns"><button id="add" class="btn" type="button">Add player</button><button id="backup" class="btn" type="button">Back up roster</button><button class="btn" type="button" data-act="restore">Restore roster</button></div>
+        <button id="reset" class="link" type="button">Start over</button>
+        <input type="file" id="restoreFile" hidden>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="app" id="team" hidden></div>
+<div class="app" id="welcome" hidden></div>
+
+<div class="sheet" id="sheet" hidden><div class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+const KEY='saucers-lineup-v2';
+const FIELD_SVG=u=>`<svg viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <pattern id="mow-${u}" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="9" height="9" style="fill:var(--grass)"/>
+              <rect width="4.5" height="9" style="fill:var(--grass-2)"/>
+            </pattern>
+          </defs>
+          <rect width="100" height="100" style="fill:var(--fence)"/>
+          <path d="M50 86 L-8 28 A82 82 0 0 1 108 28 Z" style="fill:url(#mow-${u})"/>
+          <path d="M-8 28 A82 82 0 0 1 108 28" style="fill:none;stroke:var(--dirt);stroke-width:3"/>
+          <path d="M50 86 L21.7 57.7 A40 40 0 0 1 78.3 57.7 Z" style="fill:var(--dirt)"/>
+          <circle cx="50" cy="87" r="8" style="fill:var(--dirt)"/>
+          <polygon points="50,81 61.5,69.6 50,58.2 38.5,69.6" style="fill:var(--infield-grass)"/>
+          <circle cx="50" cy="71" r="3.4" style="fill:var(--dirt)"/>
+          <rect x="48.6" y="70.6" width="2.8" height="0.8" style="fill:var(--chalk)"/>
+          <line x1="50" y1="86" x2="-8" y2="28" style="stroke:var(--chalk);stroke-width:.5"/>
+          <line x1="50" y1="86" x2="108" y2="28" style="stroke:var(--chalk);stroke-width:.5"/>
+          <rect x="64.4" y="69.2" width="2.4" height="2.4" transform="rotate(45 65.6 70.4)" style="fill:var(--chalk)"/>
+          <rect x="48.8" y="53.7" width="2.4" height="2.4" transform="rotate(45 50 54.9)" style="fill:var(--chalk)"/>
+          <rect x="33.2" y="69.2" width="2.4" height="2.4" transform="rotate(45 34.4 70.4)" style="fill:var(--chalk)"/>
+          <polygon points="48.8,85.4 51.2,85.4 51.2,86.6 50,87.6 48.8,86.6" style="fill:var(--chalk)"/>
+        </svg>`;
+const ALL_POS=['P','C','1B','2B','3B','SS','LF','LCF','RCF','RF','DH'];
+const SPOTS={
+  4:{P:[50,71],C:[50,92],'1B':[71,62],'2B':[60,49],SS:[40,49],'3B':[29,62],LF:[17,35],LCF:[37,21],RCF:[63,21],RF:[83,35],DH:[14,77],DH2:[14,92]},
+  3:{P:[50,71],C:[50,92],'1B':[71,62],'2B':[60,49],SS:[40,49],'3B':[29,62],LF:[19,32],CF:[50,18],RF:[81,32],DH:[14,77],DH2:[14,92]}
+};
+const ORDER={4:['P','C','1B','2B','3B','SS','LF','LCF','RCF','RF','DH','DH2'],3:['P','C','1B','2B','3B','SS','LF','CF','RF','DH','DH2']};
+function sample(){return {players:[],order:[],of:4,field:{},note:'',sample:false};}
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem(KEY));
+    if(s&&Array.isArray(s.players)&&Array.isArray(s.order)&&s.field&&typeof s.field==='object'&&(s.of===3||s.of===4)) return s;
+  }catch(e){}
+  return sample();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+
+let state=load();
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const byId=id=>state.players.find(p=>p.id===id);
+const spotOf=id=>Object.keys(state.field).find(k=>state.field[k]===id)||null;
+const need=spot=>spot==='DH2'?'DH':spot;
+const L=need;
+const canPlay=(p,spot)=>spot==='CF'?(p.pos.includes('LCF')||p.pos.includes('RCF')):p.pos.includes(need(spot));
+const inOrder=()=>state.order.filter(id=>{const p=byId(id);return p&&p.in});
+const benchIds=()=>inOrder().filter(id=>!spotOf(id));
+const numOf=id=>inOrder().indexOf(id)+1;
+const posText=p=>p.pos.length?ALL_POS.filter(x=>p.pos.includes(x)).join(' · '):'No positions set';
+
+function shortName(p){
+  if(p.nick&&p.nick.trim()) return p.nick.trim();
+  const parts=p.name.trim().split(/\s+/);
+  if(parts.length<2) return p.name.trim()||'Player';
+  const first=parts[0];
+  if(first.length<=2) return p.name.trim();
+  const clash=state.players.some(o=>o.id!==p.id&&o.name.trim().split(/\s+/)[0].toLowerCase()===first.toLowerCase());
+  return clash?first+' '+parts[parts.length-1][0]+'.':first;
+}
+
+function sanitize(){
+  const valid=ORDER[state.of], seen=new Set();
+  for(const k of Object.keys(state.field)){
+    const id=state.field[k], p=byId(id);
+    if(!valid.includes(k)||!p||!p.in||seen.has(id)) delete state.field[k]; else seen.add(id);
+  }
+  state.order=state.order.filter(id=>byId(id));
+  state.players.forEach(p=>{if(!state.order.includes(p.id)) state.order.push(p.id)});
+}
+function commit(){state.sample=false;sanitize();save();render();if(openSheet) openSheet.refresh();}
+
+/* ---------- actions ---------- */
+function assign(id,spot){
+  const p=byId(id); if(!p) return;
+  if(!p.in){toast(p.name+' is marked out today.');return}
+  const from=spotOf(id); if(from===spot) return;
+  const occ=state.field[spot];
+  state.field[spot]=id;
+  if(from){ if(occ) state.field[from]=occ; else delete state.field[from]; }
+  else if(occ){ toast(shortName(byId(occ))+' moved to the bench'); }
+  commit();
+}
+function toBench(id){const from=spotOf(id); if(from){delete state.field[from];commit();}}
+function reorder(id,targetId,after){
+  if(id===targetId) return;
+  const o=state.order.filter(x=>x!==id);
+  let i=o.indexOf(targetId); if(i<0) return;
+  o.splice(after?i+1:i,0,id); state.order=o; commit();
+}
+function setOF(n){
+  if(n===state.of) return;
+  const f=state.field;
+  if(n===3){
+    const l=f.LCF,r=f.RCF; delete f.LCF; delete f.RCF;
+    if(l||r) f.CF=l||r;
+    if(l&&r) toast(shortName(byId(r))+' moved to the bench');
+  }else{
+    const c=f.CF; delete f.CF; if(c) f.LCF=c;
+  }
+  state.of=n; commit();
+}
+function autofill(){
+  let n=0;
+  for(;;){
+    const bench=benchIds().map(byId);
+    const open=ORDER[state.of].filter(s=>!s.startsWith('DH')&&!state.field[s]);
+    let best=null;
+    for(const s of open){
+      const c=bench.filter(p=>canPlay(p,s));
+      if(c.length&&(!best||c.length<best.c.length)) best={s,c};
+    }
+    if(!best) break;
+    best.c.sort((a,b)=>a.pos.length-b.pos.length);
+    state.field[best.s]=best.c[0].id; n++;
+  }
+  if(n){commit();toast('Filled '+n+' spot'+(n>1?'s':''));}
+  else toast(ORDER[state.of].some(s=>!s.startsWith('DH')&&!state.field[s])?'No one on the bench is listed for the open spots':'Every spot is already filled');
+}
+function clearField(){
+  const snap=JSON.stringify(state.field);
+  state.field={}; commit();
+  toast('Field cleared','Undo',()=>{state.field=JSON.parse(snap);commit();});
+}
+
+/* ---------- render ---------- */
+function magHTML(p,{spot,warn,sub,extra=''}){
+  const n=numOf(p.id);
+  return `<div class="mag${warn?' warn':''}${extra}" data-drag data-edit="${p.id}" data-id="${p.id}" tabindex="0" role="button"
+    aria-label="${esc(p.name)}, batting ${n}${spot?', playing '+L(spot):', on the bench'}. Drag to move, or press Enter to edit.">
+    ${n?`<b class="num">${n}</b>`:''}<span class="nm">${esc(shortName(p))}</span><span class="ps">${esc(sub)}</span></div>`;
+}
+function renderField(){
+  const sp=SPOTS[state.of];
+  $('#slots').innerHTML=ORDER[state.of].map(s=>{
+    const [x,y]=sp[s], id=state.field[s];
+    if(id){
+      const p=byId(id), warn=!canPlay(p,s);
+      return `<div class="slot" data-drop="pos" data-pos="${s}" style="left:${x}%;top:${y}%">${magHTML(p,{spot:s,warn,sub:L(s)})}</div>`;
+    }
+    return `<div class="slot" data-drop="pos" data-pos="${s}" style="left:${x}%;top:${y}%"><button class="open" type="button" data-pick="${s}" aria-label="${L(s)} is open. Choose a player.">${L(s)}</button></div>`;
+  }).join('');
+}
+function renderStatus(){
+  const all=ORDER[state.of], spots=all.filter(s=>!s.startsWith('DH')), open=spots.filter(s=>!state.field[s]);
+  const filled=spots.length-open.length;
+  const off=all.filter(s=>state.field[s]&&!canPlay(byId(state.field[s]),s));
+  const bench=benchIds().map(byId);
+  const ins=inOrder().length, outs=state.players.length-ins;
+  let pill=open.length?`<span class="pill bad">${open.length} open</span>`:`<span class="pill ok">Full defense</span>`;
+  let items=open.map(s=>{
+    const c=bench.filter(p=>canPlay(p,s));
+    const who=c.length?c.map(p=>`<button class="cand" type="button" data-assign="${p.id}" data-spot="${s}">${esc(shortName(p))}</button>`).join('')
+      :`<span class="meta">No one on the bench is listed for ${need(s)}</span>`;
+    return `<li class="issue"><span class="tag bad">${L(s)}</span>${c.length?'<span class="meta">Can play it:</span>':''}${who}</li>`;
+  }).concat(off.map(s=>{
+    const p=byId(state.field[s]);
+    return `<li class="issue"><span class="tag warn">${L(s)}</span><span>${esc(shortName(p))} isn't listed for ${need(s)}</span></li>`;
+  })).join('');
+  if(ins<spots.length) items+=`<li class="issue"><span class="meta">Only ${ins} players in today. You need ${spots.length} for a full defense.</span></li>`;
+  $('#status').innerHTML=`<div class="stat-head"><span class="count">${filled}/${spots.length}<small>on the field</small></span>${pill}</div>
+    ${items?`<ul class="issues">${items}</ul>`:''}
+    <p class="meta">${ins} in today · ${bench.length} on the bench${outs?` · ${outs} out`:''}</p>`;
+}
+function renderBench(){
+  const b=benchIds().map(byId);
+  $('#benchCt').textContent=b.length;
+  $('#benchChips').innerHTML=b.length?b.map(p=>magHTML(p,{sub:p.pos.length?ALL_POS.filter(x=>p.pos.includes(x)).join(' '):'—'})).join('')
+    :`<p class="empty-note">Everyone in today is on the field. Drag a magnet here to sit someone.</p>`;
+}
+const gripSVG='<svg width="14" height="20" viewBox="0 0 14 20" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="4" r="1.6"/><circle cx="10" cy="4" r="1.6"/><circle cx="4" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/><circle cx="4" cy="16" r="1.6"/><circle cx="10" cy="16" r="1.6"/></g></svg>';
+function renderLineup(){
+  const ids=inOrder();
+  $('#lineCt').textContent=ids.length;
+  $('#lineup').innerHTML=ids.map((id,i)=>{
+    const p=byId(id), s=spotOf(id), warn=s&&!canPlay(p,s);
+    return `<li class="row" data-drop="row" data-id="${id}">
+      <span class="grip" data-drag data-id="${id}" aria-hidden="true">${gripSVG}</span>
+      <span class="bnum">${i+1}</span>
+      <button class="rname" type="button" data-edit="${id}"><b>${esc(p.name)}</b><small>${esc(posText(p))}</small></button>
+      <span class="where${s?(warn?' warn':''):' bench'}">${s?L(s):'Bench'}</span></li>`;
+  }).join('');
+  if(!state.players.length) $('#lineup').innerHTML=`<li class="empty-roster"><b>No roster yet</b><span>Restore your roster file to load the team, or add players one at a time.</span><div class="empty-actions"><button class="btn primary" type="button" data-act="restore">Restore roster</button><button class="btn" type="button" data-act="add">Add player</button></div></li>`;
+  const out=state.order.map(byId).filter(p=>p&&!p.in);
+  $('#outWrap').hidden=!out.length; $('#outCt').textContent=out.length;
+  $('#outs').innerHTML=out.map(p=>`<li class="row"><button class="rname" type="button" data-edit="${p.id}"><b>${esc(p.name)}</b><small>${esc(posText(p))}</small></button><span class="where out">Out</span></li>`).join('');
+  $('#sampleNote').hidden=!state.sample;
+}
+function render(){
+  $('#of3').setAttribute('aria-pressed',state.of===3);
+  $('#of4').setAttribute('aria-pressed',state.of===4);
+  renderField();renderStatus();renderBench();renderLineup();
+}
+
+/* ---------- drag ---------- */
+let drag=null, justDragged=false;
+document.addEventListener('pointerdown',e=>{
+  const h=e.target.closest('[data-drag]');
+  if(!h||(e.pointerType==='mouse'&&e.button!==0)) return;
+  drag={id:h.dataset.id,src:h,sx:e.clientX,sy:e.clientY,x:e.clientX,y:e.clientY,started:false,over:null,after:false};
+});
+document.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  drag.x=e.clientX; drag.y=e.clientY;
+  if(!drag.started){
+    if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6) return;
+    startDrag();
+  }
+  e.preventDefault();
+  drag.ghost.style.left=e.clientX+'px'; drag.ghost.style.top=e.clientY+'px';
+  hit(e.clientX,e.clientY);
+},{passive:false});
+document.addEventListener('pointerup',()=>{if(drag){drag.started?finish():null;drag=null;}});
+document.addEventListener('pointercancel',()=>{if(drag&&drag.started) cleanup(); drag=null;});
+
+function startDrag(){
+  const p=byId(drag.id);
+  drag.started=true;
+  const g=document.createElement('div');
+  g.className='mag ghost';
+  g.innerHTML=`<b class="num">${numOf(p.id)||''}</b><span class="nm">${esc(shortName(p))}</span><span class="ps">${esc(p.pos.join(' ')||'—')}</span>`;
+  if(!numOf(p.id)) g.querySelector('.num').remove();
+  g.style.left=drag.x+'px'; g.style.top=drag.y+'px';
+  document.body.appendChild(g); drag.ghost=g;
+  document.body.classList.add('dragging');
+  const lift=drag.src.closest('.row')||drag.src; lift.classList.add('lifted'); drag.lift=lift;
+  document.querySelectorAll('.slot').forEach(s=>{const ok=canPlay(p,s.dataset.pos);s.classList.toggle('ok',ok);s.classList.toggle('no',!ok);});
+  const tick=()=>{
+    if(!drag||!drag.started) return;
+    const h=innerHeight, y=drag.y; let v=0;
+    if(y<64) v=-Math.ceil((64-y)/5); else if(y>h-64) v=Math.ceil((y-(h-64))/5);
+    if(v){scrollBy(0,v);hit(drag.x,drag.y);}
+    drag.raf=requestAnimationFrame(tick);
+  };
+  drag.raf=requestAnimationFrame(tick);
+}
+function hit(x,y){
+  const el=document.elementFromPoint(x,y), t=el&&el.closest('[data-drop]');
+  if(drag.over&&drag.over!==t) drag.over.classList.remove('over','ins-before','ins-after');
+  drag.over=t||null;
+  if(!t) return;
+  if(t.dataset.drop==='row'){
+    if(t.dataset.id===drag.id){t.classList.remove('ins-before','ins-after');drag.over=null;return}
+    const r=t.getBoundingClientRect(); drag.after=y>r.top+r.height/2;
+    t.classList.toggle('ins-after',drag.after); t.classList.toggle('ins-before',!drag.after);
+  }else t.classList.add('over');
+}
+function cleanup(){
+  cancelAnimationFrame(drag.raf);
+  drag.ghost&&drag.ghost.remove();
+  drag.lift&&drag.lift.classList.remove('lifted');
+  if(drag.over) drag.over.classList.remove('over','ins-before','ins-after');
+  document.body.classList.remove('dragging');
+  document.querySelectorAll('.slot').forEach(s=>s.classList.remove('ok','no'));
+  justDragged=true; setTimeout(()=>justDragged=false,80);
+}
+function finish(){
+  const t=drag.over, id=drag.id, after=drag.after;
+  cleanup();
+  if(!t) return;
+  const kind=t.dataset.drop;
+  if(kind==='pos') assign(id,t.dataset.pos);
+  else if(kind==='bench') toBench(id);
+  else if(kind==='row') reorder(id,t.dataset.id,after);
+}
+
+/* ---------- clicks ---------- */
+document.addEventListener('click',e=>{
+  if(justDragged){justDragged=false;return}
+  const t=e.target;
+  const act=t.closest('[data-act]');
+  if(act){const k=act.dataset.act;if(k==='restore') $('#restoreFile').click();else if(k==='add') $('#add').click();else if(k==='install') doInstall();return}
+  const a=t.closest('[data-assign]'); if(a){assign(a.dataset.assign,a.dataset.spot);if(openSheet&&openSheet.kind==='pick') closeSheet();return}
+  const pk=t.closest('[data-pick]'); if(pk){openPicker(pk.dataset.pick);return}
+  const ed=t.closest('[data-edit]'); if(ed&&!t.closest('#panel')){openEdit(ed.dataset.edit);return}
+  if(t.closest('[data-close]')||t===$('#sheet')){closeSheet();return}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&openSheet){closeSheet();return}
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('.mag[data-edit]')){e.preventDefault();openEdit(e.target.dataset.edit);}
+});
+$('#of3').onclick=()=>setOF(3);
+$('#of4').onclick=()=>setOF(4);
+$('#fill').onclick=autofill;
+$('#clear').onclick=clearField;
+$('#share').onclick=()=>openShare();
+$('#add').onclick=()=>{
+  const id='p'+Date.now().toString(36);
+  state.players.push({id,name:'',pos:[],in:true}); state.order.push(id); commit(); openEdit(id,true);
+};
+let resetArmed=false;
+$('#reset').onclick=()=>{
+  if(!resetArmed){resetArmed=true;$('#reset').textContent='Tap again to clear the roster';setTimeout(()=>{resetArmed=false;$('#reset').textContent='Start over'},3000);return}
+  resetArmed=false;$('#reset').textContent='Start over';
+  const snap=JSON.stringify(state);state=sample();commit();
+  toast('Roster cleared','Undo',()=>{state=JSON.parse(snap);commit();});
+};
+
+/* ---------- sheets ---------- */
+let openSheet=null, lastFocus=null;
+function showSheet(kind,build){
+  lastFocus=document.activeElement;
+  openSheet={kind,refresh:build};
+  $('#sheet').hidden=false; build();
+  const f=$('#panel').querySelector('input,button'); f&&f.focus();
+}
+function closeSheet(){
+  $('#sheet').hidden=true; $('#panel').innerHTML=''; openSheet=null;
+  state.players.filter(p=>!p.name.trim()).forEach(p=>p.name='New player');
+  commit();
+  lastFocus&&document.contains(lastFocus)&&lastFocus.focus();
+}
+function openEdit(id,focusName){
+  let confirmRemove=false;
+  const build=()=>{
+    const p=byId(id); if(!p){closeSheet();return}
+    const here=spotOf(id);
+    $('#panel').innerHTML=`
+      <div class="sheet-head"><h3 id="sheetTitle">${esc(p.name||'New player')}</h3><button class="btn" type="button" data-close>Done</button></div>
+      <label class="fld"><span>Name</span><input type="text" id="pName" value="${esc(p.name)}" placeholder="Player name" autocomplete="off"></label>
+      <label class="fld"><span>Nickname on the magnet</span><input type="text" id="pNick" value="${esc(p.nick||'')}" placeholder="Optional" autocomplete="off"></label>
+      <div class="switch-row"><span class="fld"><span>Playing today</span></span><button type="button" class="switch" id="pIn" role="switch" aria-checked="${p.in}" aria-label="Playing today"></button></div>
+      <div class="fld"><span>Can play</span><div class="chips" id="pPos">${ALL_POS.map(x=>`<button type="button" class="chip" data-pos="${x}" aria-pressed="${p.pos.includes(x)}">${x}</button>`).join('')}</div>
+        <small>LCF and RCF are the two center field spots. In 3-outfielder mode, either one covers CF. DH means bat only.</small></div>
+      <div class="fld"><span>Put at</span><div class="chips" id="pSpot">
+        <button type="button" class="chip${!here?' here':''}" data-spot="" ${p.in?'':'disabled'}>Bench</button>
+        ${ORDER[state.of].map(s=>`<button type="button" class="chip${here===s?' here':''}${canPlay(p,s)&&here!==s?' fit':''}" data-spot="${s}" ${p.in?'':'disabled'}>${L(s)}</button>`).join('')}
+      </div>${p.in?'<small>Green outline means he\'s listed for that spot. Taking a filled spot swaps players.</small>':'<small>Mark him as playing today to put him on the field.</small>'}</div>
+      <button type="button" class="danger" id="pRemove">${confirmRemove?'Tap again to remove '+esc(p.name||'this player'):'Remove from roster'}</button>`;
+    const inp=$('#pName');
+    inp.oninput=()=>{p.name=inp.value;$('#sheetTitle').textContent=inp.value||'New player';save();render();};
+    const nk=$('#pNick');nk.oninput=()=>{p.nick=nk.value;save();render();};
+    $('#pIn').onclick=()=>{p.in=!p.in;commit();};
+    $('#pPos').onclick=e=>{const b=e.target.closest('[data-pos]');if(!b)return;const x=b.dataset.pos;p.pos=p.pos.includes(x)?p.pos.filter(y=>y!==x):p.pos.concat(x);state.sample=false;commit();};
+    $('#pSpot').onclick=e=>{const b=e.target.closest('[data-spot]');if(!b||b.disabled)return;b.dataset.spot?assign(id,b.dataset.spot):toBench(id);};
+    $('#pRemove').onclick=()=>{
+      if(!confirmRemove){confirmRemove=true;build();return}
+      state.players=state.players.filter(x=>x.id!==id);closeSheet();
+    };
+  };
+  showSheet('edit',build);
+  if(focusName) setTimeout(()=>{const i=$('#pName');i&&i.focus()},30);
+}
+function openPicker(spot){
+  const build=()=>{
+    if(state.field[spot]){closeSheet();return}
+    const bench=benchIds().map(byId), field=inOrder().filter(id=>spotOf(id)).map(byId);
+    const fit=bench.filter(p=>canPlay(p,spot)), rest=bench.filter(p=>!canPlay(p,spot)), movers=field.filter(p=>canPlay(p,spot));
+    const btn=(p,f,label)=>`<button type="button" class="pick${f?' fit':''}" data-assign="${p.id}" data-spot="${spot}"><b>${numOf(p.id)}. ${esc(p.name)}</b><small>${label}</small></button>`;
+    $('#panel').innerHTML=`
+      <div class="sheet-head"><h3 id="sheetTitle">Who's playing ${L(spot)}?</h3><button class="btn" type="button" data-close>Cancel</button></div>
+      ${fit.length?`<div class="fld"><span>Bench · listed for ${need(spot)}</span><div class="pick-group">${fit.map(p=>btn(p,true,posText(p))).join('')}</div></div>`:''}
+      ${rest.length?`<div class="fld"><span>Rest of the bench</span><div class="pick-group">${rest.map(p=>btn(p,false,posText(p))).join('')}</div></div>`:''}
+      ${movers.length?`<div class="fld"><span>Move from the field</span><div class="pick-group">${movers.map(p=>btn(p,true,'now at '+L(spotOf(p.id)))).join('')}</div></div>`:''}
+      ${!bench.length&&!movers.length?'<p class="meta">Nobody is free for this spot. Mark more players in, or move someone off the field.</p>':''}`;
+  };
+  showSheet('pick',build);
+}
+
+/* ---------- publish ---------- */
+const b64e=str=>{const by=new TextEncoder().encode(str);let bin='';for(const x of by) bin+=String.fromCharCode(x);return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+const b64d=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4) s+='=';const bin=atob(s);return new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0)));};
+const fullName=p=>p.name.trim()||'New player';
+const callName=p=>(p.nick&&p.nick.trim())||fullName(p);
+function lineupPayload(){
+  return {v:1,of:state.of,t:(state.note||'').trim(),d:Date.now(),
+    b:inOrder().map(id=>{const p=byId(id);return [shortName(p),fullName(p),spotOf(id)||'']}),
+    o:state.order.map(byId).filter(p=>p&&!p.in).map(callName)};
+}
+const lineupCode=()=>b64e(JSON.stringify(lineupPayload()));
+const lineupURL=code=>location.origin+location.pathname+'#lineup='+code;
+function lineupText(url){
+  const note=(state.note||'').trim();
+  const lines=['*Sunday Saucers lineup*'];
+  if(note) lines.push(note);
+  lines.push('');
+  inOrder().forEach((id,i)=>{const p=byId(id),s=spotOf(id);lines.push(`${i+1}. ${callName(p)} - ${s?L(s):'Bench'}`);});
+  const open=ORDER[state.of].filter(s=>!s.startsWith('DH')&&!state.field[s]);
+  if(open.length) lines.push('','Still need: '+open.join(', '));
+  const out=state.order.map(byId).filter(p=>p&&!p.in);
+  if(out.length) lines.push('','Out: '+out.map(callName).join(', '));
+  lines.push('','Field view: '+url);
+  return lines.join('\n');
+}
+function decodeLineup(code){
+  try{
+    const o=JSON.parse(b64d(code));
+    if(!o||o.v!==1||!Array.isArray(o.b)) return null;
+    const of=o.of===3?3:4, str=(x,n)=>typeof x==='string'?x.slice(0,n):'';
+    const b=o.b.filter(Array.isArray).slice(0,40).map(e=>{const d=str(e[0],40)||'Player';return [d,str(e[1],60)||d,ORDER[of].includes(e[2])?e[2]:'']});
+    const out=Array.isArray(o.o)?o.o.map(x=>str(x,60)).filter(Boolean).slice(0,40):[];
+    return {of,b,o:out,t:str(o.t,80),d:typeof o.d==='number'?o.d:0};
+  }catch(e){return null}
+}
+function openShare(){
+  if(!state.players.length){toast('Load your roster first');return}
+  const build=()=>{
+    $('#panel').innerHTML=`
+      <div class="sheet-head"><h3 id="sheetTitle">Publish lineup</h3><button class="btn" type="button" data-close>Done</button></div>
+      <label class="fld"><span>Game note</span><input type="text" id="gNote" value="${esc(state.note||'')}" placeholder="Sun 9:00 AM vs. Bombers" autocomplete="off"><small>Optional. Shows at the top of the team's view.</small></label>
+      <div class="fld"><span>Message</span><textarea class="msg" id="msgText" aria-label="Lineup message"></textarea>
+        <small>Edit anything before sending. The link at the bottom opens the field view for the team.</small></div>
+      <div class="share-actions">
+        ${navigator.share?'<button class="btn primary" type="button" id="shareNative">Share</button>':''}
+        <a class="btn${navigator.share?'':' primary'}" id="waLink" target="_blank" rel="noopener" href="#">WhatsApp</a>
+        <button class="btn" type="button" id="copyMsg">Copy message</button>
+        <a class="btn" id="previewLink" href="#">Preview team view</a>
+      </div>`;
+    const ta=$('#msgText'), wa=$('#waLink'), pv=$('#previewLink'), note=$('#gNote');
+    let code='';
+    const setWa=()=>{wa.href='https://wa.me/?text='+encodeURIComponent(ta.value);};
+    const refresh=()=>{code=lineupCode();ta.value=lineupText(lineupURL(code));setWa();};
+    refresh();
+    note.oninput=()=>{state.note=note.value;save();refresh();};
+    ta.oninput=setWa;
+    const sn=$('#shareNative'); if(sn) sn.onclick=()=>{navigator.share({text:ta.value}).catch(()=>{});};
+    $('#copyMsg').onclick=()=>{
+      const done=()=>toast('Copied. Paste it in the team chat.');
+      const fallback=()=>{ta.focus();ta.select();toast('Press and hold to copy the selected text');};
+      try{navigator.clipboard.writeText(ta.value).then(done,fallback);}catch(e){fallback();}
+    };
+    pv.onclick=e=>{e.preventDefault();closeSheet();location.hash='lineup='+code;};
+  };
+  showSheet('share',build);
+}
+
+/* ---------- backup / restore ---------- */
+function backup(){
+  if(!state.players.length){toast('Nothing to back up yet');return}
+  const data={app:'saucers-lineup',v:1,savedAt:new Date().toISOString(),
+    players:state.players.map(p=>({id:p.id,name:p.name,nick:p.nick||'',pos:p.pos,in:p.in})),
+    order:state.order,of:state.of,field:state.field,note:state.note||''};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='saucers-roster-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+  toast('Roster saved to your Downloads');
+}
+function restore(file){
+  file.text().then(t=>{
+    const d=JSON.parse(t);
+    if(!d||!Array.isArray(d.players)) throw 0;
+    const seen=new Set();
+    const players=d.players.filter(p=>p&&typeof p.name==='string').map((p,i)=>{
+      let id=(typeof p.id==='string'&&/^[\w-]{1,40}$/.test(p.id)&&!seen.has(p.id))?p.id:'r'+i+Date.now().toString(36);
+      seen.add(id);
+      return {id,name:p.name.slice(0,60),nick:typeof p.nick==='string'?p.nick.slice(0,30):'',
+        pos:Array.isArray(p.pos)?ALL_POS.filter(x=>p.pos.includes(x)):[],in:p.in!==false};
+    });
+    if(!players.length) throw 0;
+    const snap=JSON.stringify(state);
+    state={players,order:Array.isArray(d.order)?d.order.filter(x=>typeof x==='string'):[],of:d.of===3?3:4,
+      field:(d.field&&typeof d.field==='object'&&!Array.isArray(d.field))?Object.assign({},d.field):{},note:typeof d.note==='string'?d.note:'',sample:false};
+    commit();
+    toast('Loaded '+players.length+' players','Undo',()=>{state=JSON.parse(snap);commit();});
+  }).catch(()=>toast("That file isn't a Saucers roster backup"));
+}
+
+/* ---------- install ---------- */
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+let installEvt=null;
+const showInstall=on=>document.querySelectorAll('[data-install]').forEach(b=>b.hidden=!on);
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;showInstall(true);});
+addEventListener('appinstalled',()=>{installEvt=null;showInstall(false);toast('Installed. Look for Saucers on your home screen.');});
+function doInstall(){
+  if(!installEvt){toast(isIOS?'In Safari, tap Share, then Add to Home Screen':'Open the Chrome menu, then Install app');return}
+  installEvt.prompt();
+  Promise.resolve(installEvt.userChoice).finally(()=>{installEvt=null;showInstall(false);});
+}
+
+/* ---------- team view ---------- */
+const fmtWhen=d=>new Date(d).toLocaleString([],{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+function installCard(){
+  if(isStandalone()) return '';
+  return `<section class="install-card"><div><b>Keep it on your home screen</b>
+    <span>${isIOS?'In Safari, tap Share, then Add to Home Screen.':'In Chrome, tap the ⋮ menu, then Install app.'} New lineups still come as links in the team chat.</span></div>
+    <button class="btn primary" type="button" data-act="install" data-install ${installEvt?'':'hidden'}>Install</button></section>`;
+}
+function renderTeam(Lu,stale){
+  const el=$('#team');
+  if(!Lu){
+    el.innerHTML=`<header class="top"><div><p class="eyebrow">Sunday Saucers</p><h1>Link didn't load</h1></div></header>
+      <p class="note">This lineup link is incomplete. It may have been cut off when it was copied. Ask for a fresh link in the team chat.</p>`;
+    return;
+  }
+  const sp=SPOTS[Lu.of], taken={};
+  Lu.b.forEach((e,i)=>{if(e[2]&&!taken[e[2]]) taken[e[2]]={d:e[0],n:i+1};});
+  const slots=ORDER[Lu.of].map(s=>{
+    const [x,y]=sp[s], m=taken[s];
+    if(m) return `<div class="slot" style="left:${x}%;top:${y}%"><div class="mag ro"><b class="num">${m.n}</b><span class="nm">${esc(m.d)}</span><span class="ps">${L(s)}</span></div></div>`;
+    if(s.startsWith('DH')) return '';
+    return `<div class="slot" style="left:${x}%;top:${y}%"><span class="open ro">${s}</span></div>`;
+  }).join('');
+  const first=d=>d.split(/[\s.]+/)[0].toLowerCase();
+  const rows=Lu.b.map((e,i)=>{
+    const [d,full,s]=e, alt=!full.toLowerCase().includes(first(d));
+    return `<li class="row ro"><span class="bnum">${i+1}</span><span class="rname"><b>${esc(full)}</b>${alt?`<small>${esc(d)}</small>`:''}</span><span class="where${s?'':' bench'}">${s?L(s):'Bench'}</span></li>`;
+  }).join('');
+  const open=ORDER[Lu.of].filter(s=>!s.startsWith('DH')&&!taken[s]);
+  el.innerHTML=`
+    <header class="top"><div><p class="eyebrow">Sunday Saucers</p><h1>${stale?'Last lineup':'Lineup'}</h1>
+      ${Lu.t?`<p class="game-note">${esc(Lu.t)}</p>`:''}
+      <p class="meta">${Lu.d?'Posted '+esc(fmtWhen(Lu.d))+' · ':''}${Lu.b.length} players in today</p></div></header>
+    ${stale?'<p class="note">This is the last lineup you opened. New lineups come as links in the team chat.</p>':''}
+    <main class="grid">
+      <section class="col" aria-label="Defense">
+        <div class="field">${FIELD_SVG('t')}<div>${slots}</div></div>
+        ${open.length?`<p class="meta center">Still open: ${open.join(', ')}</p>`:''}
+      </section>
+      <section class="col" aria-label="Batting order">
+        <h2>Batting order <span class="ct">${Lu.b.length}</span></h2>
+        <ol class="lineup">${rows||'<li class="empty-roster"><span>No players listed.</span></li>'}</ol>
+        ${Lu.o.length?`<p class="meta">Out today: ${Lu.o.map(esc).join(', ')}</p>`:''}
+      </section>
+    </main>
+    ${installCard()}
+    <p class="team-foot"><a class="link" href="#board">Manage the board</a></p>`;
+}
+function renderWelcome(){
+  $('#welcome').innerHTML=`
+    <header class="top"><div><p class="eyebrow">Sunday Saucers</p><h1>Lineup</h1></div></header>
+    <div class="welcome">
+      <section class="wcard"><b>Playing?</b><span>Lineups come as links in the WhatsApp chat. Tap the latest one to see where you're batting and playing.</span></section>
+      <section class="wcard"><b>Running the team?</b><span>Set up the board, load the roster, then publish lineups to the chat.</span><a class="btn primary" href="#board">Set up the board</a></section>
+    </div>
+    ${installCard()}`;
+}
+
+/* ---------- routing ---------- */
+const LAST='saucers-last-lineup';
+const getLast=()=>{try{return localStorage.getItem(LAST)}catch(e){return null}};
+const setLast=v=>{try{localStorage.setItem(LAST,v)}catch(e){}};
+function show(id){['editor','team','welcome'].forEach(x=>{$('#'+x).hidden=x!==id;});}
+function route(){
+  if(openSheet) closeSheet();
+  const m=location.hash.match(/^#lineup=([A-Za-z0-9_-]+)$/);
+  if(m){const Lu=decodeLineup(m[1]);if(Lu) setLast(m[1]);renderTeam(Lu,false);show('team');scrollTo(0,0);return}
+  if(location.hash==='#board'||state.players.length){render();show('editor');return}
+  const last=getLast(), Lu=last&&decodeLineup(last);
+  if(Lu){renderTeam(Lu,true);show('team');return}
+  renderWelcome();show('welcome');
+}
+addEventListener('hashchange',route);
+
+/* ---------- toast ---------- */
+let toastT=null;
+function toast(msg,action,fn){
+  const t=$('#toast');
+  t.innerHTML=`<span>${esc(msg)}</span>${action?`<button type="button">${esc(action)}</button>`:''}`;
+  if(action) t.querySelector('button').onclick=()=>{fn();t.hidden=true;};
+  t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,action?5000:2600);
+}
+
+$('#field').insertAdjacentHTML('afterbegin',FIELD_SVG('e'));
+$('#backup').onclick=backup;
+$('#restoreFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f) restore(f);};
+sanitize(); route();
+if('serviceWorker' in navigator) addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});
+})();
+</script>
+</body>
+</html>

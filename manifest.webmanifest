@@ -1,0 +1,16 @@
+{
+  "name": "Sunday Saucers Lineup",
+  "short_name": "Saucers",
+  "description": "Lineup and defense board for the Sunday Saucers",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef0eb",
+  "theme_color": "#c42a2f",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
