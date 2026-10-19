@@ -1,8 +1,9 @@
 // Saucers Lineup service worker: keeps the app working offline at the field.
 // Bump CACHE when you publish a new version so phones pick up the update.
-const CACHE = 'saucers-v4';
+const CACHE = 'saucers-v5';
 const CORE = ['./', './index.html', './manifest.webmanifest',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
+  './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png',
+  './sponsors/stonebridge.png', './sponsors/skyline.jpg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));

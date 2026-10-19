@@ -232,6 +232,14 @@ input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10p
 .install-card{margin-top:22px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .install-card div{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
 .install-card span{color:var(--muted);font-size:14px}
+.sponsors{margin:26px 0 0;text-align:center}
+.sponsors h2{margin:0 0 10px;font:700 12px/1.2 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sp-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:520px;margin:0 auto}
+.sp{display:grid;place-items:center;aspect-ratio:1/.8;background:#161616;border:1px solid var(--line);border-radius:16px;padding:10px;overflow:hidden;transition:transform .12s}
+.sp:hover{transform:translateY(-2px)}
+.sp:focus-visible{outline:3px solid var(--sauce);outline-offset:2px}
+.sp{position:relative}
+.sp img{position:absolute;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);object-fit:contain;display:block}
 .team-foot{margin:22px 0 0;text-align:center}
 .welcome{display:grid;gap:14px;max-width:560px}
 .wcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
@@ -881,7 +889,10 @@ function renderTeam(Lu,mode){
   teamMode=mode;
   const el=$('#team');
   const head=t=>`<header class="top"><div><p class="eyebrow">Sunday Saucers</p><h1>${t}</h1>`;
-  const foot=`${installCard()}<p class="team-foot">${isManager()?'<button type="button" class="link" data-act="board">Back to the board</button>':'<a class="link" href="#board">Manager sign-in</a>'}</p>`;
+  const sponsors=`<section class="sponsors" aria-label="Team sponsors"><h2>Proudly sponsored by</h2><div class="sp-row">
+    <a class="sp" href="https://stonebridgebagels.com" target="_blank" rel="noopener" aria-label="Stonebridge Bagels &amp; Deli, opens their website"><img src="sponsors/stonebridge.png" alt="Stonebridge Bagels &amp; Deli" width="480" height="480" loading="lazy"></a>
+    <a class="sp" href="https://skylinedigitalmedia.org" target="_blank" rel="noopener" aria-label="Skyline Digital Media, opens their website"><img src="sponsors/skyline.jpg" alt="Skyline Digital Media" width="720" height="503" loading="lazy"></a></div></section>`;
+  const foot=`${sponsors}${installCard()}<p class="team-foot">${isManager()?'<button type="button" class="link" data-act="board">Back to the board</button>':'<a class="link" href="#board">Manager sign-in</a>'}</p>`;
   if(!Lu){
     const msg={
       loading:['Loading lineup','Getting the latest lineup…'],
