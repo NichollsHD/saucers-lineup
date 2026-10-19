@@ -1,6 +1,6 @@
 // Saucers Lineup service worker: keeps the app working offline at the field.
 // Bump CACHE when you publish a new version so phones pick up the update.
-const CACHE = 'saucers-v6';
+const CACHE = 'saucers-v7';
 const CORE = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png',
   './sponsors/stonebridge.png', './sponsors/skyline.jpg'];
@@ -27,7 +27,8 @@ self.addEventListener('fetch', e => {
   if (req.mode === 'navigate') {
     e.respondWith((async () => {
       const cache = await caches.open(CACHE);
-      const net = fetch(req).then(res => { if (res.ok) cache.put('./index.html', res.clone()); return res; });
+      // cache:'no-cache' makes the browser check GitHub for a newer page instead of reusing its 10-minute copy.
+      const net = fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).then(res => { if (res.ok) cache.put('./index.html', res.clone()); return res; });
       net.catch(() => {});
       try {
         const res = await Promise.race([net, new Promise(r => setTimeout(r, 3500))]);
@@ -44,7 +45,8 @@ self.addEventListener('fetch', e => {
   if (url.origin === self.location.origin || fonts) {
     e.respondWith(caches.open(CACHE).then(async cache => {
       const hit = await cache.match(req);
-      const net = fetch(req).then(res => {
+      // Our own files: re-check with GitHub so background refreshes get the newest copy. Fonts: normal fetch.
+      const net = fetch(fonts ? req : new Request(req, { cache: 'no-cache' })).then(res => {
         if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
         return res;
       }).catch(() => hit);
