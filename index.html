@@ -688,7 +688,7 @@ function openPicker(spot){
 function openRoll(){
   if(!state.players.length){toast('Load your roster first');return}
   const build=()=>{
-    const ps=state.order.map(byId).filter(Boolean), ins=ps.filter(p=>p.in).length;
+    const ps=state.players.slice().sort((a,b)=>a.name.trim().localeCompare(b.name.trim(),undefined,{sensitivity:'base'})), ins=ps.filter(p=>p.in).length;
     $('#panel').innerHTML=`
       <div class="sheet-head"><h3 id="sheetTitle">Who's in this week</h3><button class="btn" type="button" data-close>Done</button></div>
       <div class="roll-head"><span class="roll-count">${ins} in · ${ps.length-ins} out</span>

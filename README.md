@@ -36,3 +36,7 @@ Set the lineup on the board, tap **Publish lineup**, then **Publish to team**. T
 ## Updating the app
 
 Upload the changed files to the repo. Then open `sw.js` and bump `saucers-v1` to `saucers-v2` (and so on) so installed phones pick up the new version.
+
+## Changelog
+
+See [CHANGELOG.txt](CHANGELOG.txt) for every update, addition and fix.

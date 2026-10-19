@@ -1,0 +1,115 @@
+SUNDAY SAUCERS LINEUP BOARD - CHANGELOG
+=======================================
+Live app:  https://nichollshd.github.io/saucers-lineup/
+Repo:      https://github.com/NichollsHD/saucers-lineup
+
+Newest changes at the top. Each entry: version, date, what changed.
+When the app itself changes, also bump CACHE in sw.js (saucers-v4 -> v5...)
+so installed phones pick up the update.
+
+Note: "Publish lineup: ..." commits in the repo history are weekly lineups
+published from the app, not code changes. They aren't listed here.
+
+
+---------------------------------------------------------------------
+v1.3  -  2026-10-18   (sw.js cache: saucers-v4)
+---------------------------------------------------------------------
+CHANGED
+- Who's in list is now alphabetized by first name, so it's quicker to
+  check off RSVPs.
+ADDED
+- This changelog (CHANGELOG.txt).
+
+
+---------------------------------------------------------------------
+v1.2  -  2026-10-18   (sw.js cache: saucers-v3)
+---------------------------------------------------------------------
+ADDED
+- "Who's in" weekly check-off: every player on one screen, tap to mark
+  someone out. The button shows how many are in, e.g. "Who's in (13)".
+- "Everyone in" / "Everyone out" buttons to reset for the next week,
+  with Undo.
+- Batting order size switch: "Top 12 bat" (default) or "Everyone bats".
+- Subs: with Top 12, anyone past the 12th batter is listed under a
+  "Subs" heading with no number, on the board, the team view, and the
+  WhatsApp message ("Subs: ..." line).
+- Warning on the board if a sub is placed on the field ("drag him into
+  the top 12").
+- "Fill open spots" now prefers batters over subs.
+CHANGED
+- The team view and WhatsApp message only show players who are in this
+  week. The "Out today" list is no longer published, so names of
+  players who are out never leave your phone.
+
+
+---------------------------------------------------------------------
+v1.1  -  2026-10-18   (sw.js cache: saucers-v2)
+---------------------------------------------------------------------
+ADDED
+- One permanent team link (nichollshd.github.io/saucers-lineup/) that
+  always shows the latest lineup. Replaces the long share links that
+  got cut off in WhatsApp ("Link didn't load").
+- Publish to team: the board saves the lineup to lineup.json in the
+  repo; the team view loads it.
+- Near-live updates: the team view checks for changes every minute and
+  whenever the app is reopened, and shows "Lineup updated".
+- Manager-only editing: the board requires a manager sign-in (a GitHub
+  fine-grained key with Contents read/write on this repo only).
+  Everyone else gets a read-only view. "Sign out of manager" button.
+- Status messages for offline, no lineup posted yet, and can't reach
+  the lineup.
+CHANGED
+- WhatsApp message ends with "Field view: <team link>" instead of a
+  long encoded link.
+- Old long links still open (read-only) and point to the latest lineup.
+- Service worker never caches lineup.json, so the lineup is always fresh.
+- README: Pages setup, install steps, manager key setup, publishing,
+  updating.
+
+
+---------------------------------------------------------------------
+v1.0  -  2026-10-18   First release on GitHub Pages
+---------------------------------------------------------------------
+ADDED
+- Installable app (PWA) for iPhone (Safari > Share > Add to Home
+  Screen) and Android (Chrome > Install app). Works offline after the
+  first visit.
+- App icons, home screen name, and an Install button / install card.
+- Team view: read-only field and batting order for players and fans.
+- Roster kept off GitHub: Back up roster / Restore roster to a file
+  (saucers-roster.json) on the manager's phone.
+
+
+---------------------------------------------------------------------
+Prototype  -  before GitHub (built and tested in Claude)
+---------------------------------------------------------------------
+- Magnetic lineup board: field diagram, bench tray, and batting order.
+- Drag and drop players onto positions, the bench, or batting spots;
+  tap a player to edit, or tap an open spot to pick who plays it.
+- Player roster with positions each player can play; out-of-position
+  warnings (orange magnet); "Can play it" suggestions for open spots.
+- 3 or 4 outfielders (LF / LCF / RCF / RF, or LF / CF / RF).
+- 12-man batting order: two DH spots stacked on the field, both
+  labeled "DH".
+- Add / remove players, nicknames on magnets, "playing today" switch.
+- Fill open spots, Clear field (with Undo), Start over.
+- Publish sheet: game note, ready-made WhatsApp message, Share / Copy.
+- Full team roster (19 players) loaded with positions and nicknames.
+- Light and dark mode.
+
+
+---------------------------------------------------------------------
+PLANNED
+---------------------------------------------------------------------
+V2
+- Player stats: how to upload them, how they're shown, toggle on/off.
+- Player profiles (if we get far enough).
+V2 / V3
+- Live game feed: a second "scorekeeper" login that can update the
+  score, inning, outs, and major events (quick dropdowns) but can't
+  change the lineup. Likely its own small repo/key so the scorekeeper
+  can't touch lineup.json.
+Ideas
+- First names / nicknames only in the published lineup (lineup.json
+  is public).
+- Short nichollshd.github.io link that forwards to the app.
