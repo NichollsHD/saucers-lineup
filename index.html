@@ -226,6 +226,12 @@ input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10p
 .row.ro{grid-template-columns:34px minmax(0,1fr) auto;padding-left:8px}
 .row.ro .rname{cursor:default}
 .game-note{margin:6px 0 0;font:600 17px/1.3 var(--f-body)}
+.game-info{display:flex;flex-wrap:wrap;gap:8px 12px;margin:10px 0 0;padding:0}
+.game-info>div{display:flex;flex-direction:column;gap:2px;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+.game-info dt{font:700 11px/1.2 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.game-info dd{margin:0;font:700 20px/1.2 var(--f-display);letter-spacing:.02em;overflow-wrap:anywhere}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.two-col .fld{min-width:0}
 .top .meta{margin-top:6px}
 .meta.center{text-align:center}
 .app>.note{margin:0 0 16px}
@@ -348,7 +354,7 @@ const SPOTS={
   3:{P:[50,71],C:[50,92],'1B':[71,62],'2B':[60,49],SS:[40,49],'3B':[29,62],LF:[19,32],CF:[50,18],RF:[81,32],DH:[14,77],DH2:[14,92]}
 };
 const ORDER={4:['P','C','1B','2B','3B','SS','LF','LCF','RCF','RF','DH','DH2'],3:['P','C','1B','2B','3B','SS','LF','CF','RF','DH','DH2']};
-function sample(){return {players:[],order:[],of:4,field:{},note:'',bat:12,sample:false};}
+function sample(){return {players:[],order:[],of:4,field:{},note:'',gtime:'',gfield:'',bat:12,sample:false};}
 function load(){
   try{
     const s=JSON.parse(localStorage.getItem(KEY));
@@ -732,7 +738,7 @@ const fullName=p=>p.name.trim()||'New player';
 const callName=p=>(p.nick&&p.nick.trim())||fullName(p);
 function lineupPayload(){
   /* Only this week's players are published. n = batting order size (0 = everyone bats). */
-  return {v:1,of:state.of,t:(state.note||'').trim(),d:Date.now(),n:state.bat===0?0:12,
+  return {v:1,of:state.of,t:(state.note||'').trim(),tm:(state.gtime||'').trim(),fl:(state.gfield||'').trim(),d:Date.now(),n:state.bat===0?0:12,
     b:inOrder().map(id=>{const p=byId(id);return [shortName(p),fullName(p),spotOf(id)||'']}),
     o:[]};
 }
@@ -742,13 +748,16 @@ function cleanLineup(o){
   const b=o.b.filter(Array.isArray).slice(0,40).map(e=>{const d=str(e[0],40)||'Player';return [d,str(e[1],60)||d,ORDER[of].includes(e[2])?e[2]:'']});
   const out=Array.isArray(o.o)?o.o.map(x=>str(x,60)).filter(Boolean).slice(0,40):[];
   const n=(typeof o.n==='number'&&o.n>0)?Math.floor(o.n):0;
-  return {of,b,o:out,n,t:str(o.t,80),d:typeof o.d==='number'?o.d:0};
+  return {of,b,o:out,n,t:str(o.t,80),tm:str(o.tm,60),fl:str(o.fl,60),d:typeof o.d==='number'?o.d:0};
 }
 const decodeLineup=code=>{try{return cleanLineup(JSON.parse(b64d(code)))}catch(e){return null}};
 function lineupText(){
   const note=(state.note||'').trim();
   const lines=['*Sunday Saucers lineup*'];
   if(note) lines.push(note);
+  const tm=(state.gtime||'').trim(), fl=(state.gfield||'').trim();
+  if(tm) lines.push('Time: '+tm);
+  if(fl) lines.push('Field: '+fl);
   lines.push('');
   const ids=inOrder(), nb=batN();
   ids.slice(0,nb).forEach((id,i)=>{const p=byId(id),s=spotOf(id);lines.push(`${i+1}. ${callName(p)} - ${s?L(s):'Bench'}`);});
@@ -790,6 +799,10 @@ function openShare(){
     $('#panel').innerHTML=`
       <div class="sheet-head"><h3 id="sheetTitle">Publish lineup</h3><button class="btn" type="button" data-close>Done</button></div>
       <label class="fld"><span>Game note</span><input type="text" id="gNote" value="${esc(state.note||'')}" placeholder="Sun 9:00 AM vs. Bombers" autocomplete="off"><small>Optional. Shows at the top of the team's view.</small></label>
+      <div class="two-col">
+        <label class="fld"><span>Time</span><input type="text" id="gTime" value="${esc(state.gtime||'')}" placeholder="8:20 &amp; 9:40" maxlength="60" autocomplete="off"></label>
+        <label class="fld"><span>Field</span><input type="text" id="gField" value="${esc(state.gfield||'')}" placeholder="Willowbrook" maxlength="60" autocomplete="off"></label>
+      </div>
       <div class="fld"><button class="btn primary big" type="button" id="pubBtn">Publish to team</button>
         <small id="pubStatus">Updates the lineup at the team link. Anyone with it open sees the change within about a minute.</small></div>
       <div class="fld"><span>Tell the chat</span><textarea class="msg" id="msgText" aria-label="Message for the team chat"></textarea>
@@ -805,6 +818,8 @@ function openShare(){
     const refresh=()=>{ta.value=lineupText();setWa();};
     refresh();
     note.oninput=()=>{state.note=note.value;save();refresh();};
+    $('#gTime').oninput=e=>{state.gtime=e.target.value;save();refresh();};
+    $('#gField').oninput=e=>{state.gfield=e.target.value;save();refresh();};
     ta.oninput=setWa;
     const sn=$('#shareNative'); if(sn) sn.onclick=()=>{navigator.share({text:ta.value}).catch(()=>{});};
     $('#copyMsg').onclick=()=>{
@@ -835,7 +850,7 @@ function backup(){
   if(!state.players.length){toast('Nothing to back up yet');return}
   const data={app:'saucers-lineup',v:1,savedAt:new Date().toISOString(),
     players:state.players.map(p=>({id:p.id,name:p.name,nick:p.nick||'',pos:p.pos,in:p.in})),
-    order:state.order,of:state.of,field:state.field,note:state.note||'',bat:state.bat===0?0:12};
+    order:state.order,of:state.of,field:state.field,note:state.note||'',gtime:state.gtime||'',gfield:state.gfield||'',bat:state.bat===0?0:12};
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
   a.download='saucers-roster-'+new Date().toISOString().slice(0,10)+'.json';
@@ -857,7 +872,7 @@ function restore(file){
     if(!players.length) throw 0;
     const snap=JSON.stringify(state);
     state={players,order:Array.isArray(d.order)?d.order.filter(x=>typeof x==='string'):[],of:d.of===3?3:4,
-      field:(d.field&&typeof d.field==='object'&&!Array.isArray(d.field))?Object.assign({},d.field):{},note:typeof d.note==='string'?d.note:'',bat:d.bat===0?0:12,sample:false};
+      field:(d.field&&typeof d.field==='object'&&!Array.isArray(d.field))?Object.assign({},d.field):{},note:typeof d.note==='string'?d.note:'',gtime:typeof d.gtime==='string'?d.gtime.slice(0,60):'',gfield:typeof d.gfield==='string'?d.gfield.slice(0,60):'',bat:d.bat===0?0:12,sample:false};
     commit();
     toast('Loaded '+players.length+' players','Undo',()=>{state=JSON.parse(snap);commit();});
   }).catch(()=>toast("That file isn't a Saucers roster backup"));
@@ -927,6 +942,7 @@ function renderTeam(Lu,mode){
   }[mode]||'';
   el.innerHTML=head('Lineup')+`
       ${Lu.t?`<p class="game-note">${esc(Lu.t)}</p>`:''}
+      ${(Lu.tm||Lu.fl)?`<dl class="game-info">${Lu.tm?`<div><dt>Time</dt><dd>${esc(Lu.tm)}</dd></div>`:''}${Lu.fl?`<div><dt>Field</dt><dd>${esc(Lu.fl)}</dd></div>`:''}</dl>`:''}
       <p class="meta">${Lu.d?'Posted '+esc(fmtWhen(Lu.d))+' · ':''}${Lu.b.length} players in today</p>${mode==='live'||mode==='saved'?status:''}</div></header>
     ${mode==='live'||mode==='saved'?'':status}
     <main class="grid">
