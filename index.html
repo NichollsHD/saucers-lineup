@@ -185,6 +185,20 @@ input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10p
 .pick small{font:600 12px var(--f-display);letter-spacing:.06em;color:var(--muted);white-space:nowrap}
 .pick.fit{border-color:var(--ok)}
 .pick.fit small{color:var(--ok)}
+/* Who's in (weekly RSVP check-off) */
+.roll-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.roll-count{font:700 15px var(--f-display);letter-spacing:.04em}
+.roll-list{display:flex;flex-direction:column;gap:6px}
+.roll{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);cursor:pointer;color:var(--muted);font:inherit}
+.roll .box{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);flex:none;display:grid;place-items:center}
+.roll b{font:600 16px var(--f-body);text-decoration:line-through}
+.roll small{margin-left:auto;font:600 12px var(--f-display);letter-spacing:.06em;white-space:nowrap}
+.roll.in{color:var(--ink);border-color:var(--ok)}
+.roll.in b{text-decoration:none}
+.roll.in .box{background:var(--ok);border-color:var(--ok)}
+.roll.in .box::after{content:"";width:6px;height:11px;border:solid var(--card);border-width:0 3px 3px 0;transform:translate(0,-1px) rotate(45deg)}
+.lineup .sub-head{list-style:none;font:700 12px/1.2 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 4px 4px}
+.bnum.sub{opacity:.45}
 
 /* Share */
 .btn.wa{border-color:var(--ok);color:var(--ok)}
@@ -245,6 +259,7 @@ input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10p
         <button id="of3" type="button" aria-pressed="false">3 OF</button>
         <button id="of4" type="button" aria-pressed="true">4 OF</button>
       </div>
+      <button id="roll" class="btn" type="button">Who's in</button>
       <button id="fill" class="btn" type="button">Fill open spots</button>
       <button id="clear" class="btn" type="button">Clear field</button>
       <button id="share" class="btn primary" type="button">Publish lineup</button>
@@ -325,11 +340,11 @@ const SPOTS={
   3:{P:[50,71],C:[50,92],'1B':[71,62],'2B':[60,49],SS:[40,49],'3B':[29,62],LF:[19,32],CF:[50,18],RF:[81,32],DH:[14,77],DH2:[14,92]}
 };
 const ORDER={4:['P','C','1B','2B','3B','SS','LF','LCF','RCF','RF','DH','DH2'],3:['P','C','1B','2B','3B','SS','LF','CF','RF','DH','DH2']};
-function sample(){return {players:[],order:[],of:4,field:{},note:'',sample:false};}
+function sample(){return {players:[],order:[],of:4,field:{},note:'',bat:12,sample:false};}
 function load(){
   try{
     const s=JSON.parse(localStorage.getItem(KEY));
-    if(s&&Array.isArray(s.players)&&Array.isArray(s.order)&&s.field&&typeof s.field==='object'&&(s.of===3||s.of===4)) return s;
+    if(s&&Array.isArray(s.players)&&Array.isArray(s.order)&&s.field&&typeof s.field==='object'&&(s.of===3||s.of===4)){if(s.bat!==0) s.bat=12;return s;}
   }catch(e){}
   return sample();
 }
@@ -345,7 +360,10 @@ const L=need;
 const canPlay=(p,spot)=>spot==='CF'?(p.pos.includes('LCF')||p.pos.includes('RCF')):p.pos.includes(need(spot));
 const inOrder=()=>state.order.filter(id=>{const p=byId(id);return p&&p.in});
 const benchIds=()=>inOrder().filter(id=>!spotOf(id));
-const numOf=id=>inOrder().indexOf(id)+1;
+/* Batting order size: 12 by default (10 fielders + 2 DH). Anyone past that is an unnumbered sub. bat=0 means everyone bats. */
+const batN=()=>state.bat===0?Infinity:12;
+const numOf=id=>{const i=inOrder().indexOf(id);return i>=0&&i<batN()?i+1:0;};
+const subIds=()=>inOrder().slice(batN());
 const posText=p=>p.pos.length?ALL_POS.filter(x=>p.pos.includes(x)).join(' · '):'No positions set';
 
 function shortName(p){
@@ -410,7 +428,7 @@ function autofill(){
       if(c.length&&(!best||c.length<best.c.length)) best={s,c};
     }
     if(!best) break;
-    best.c.sort((a,b)=>a.pos.length-b.pos.length);
+    best.c.sort((a,b)=>(!numOf(a.id))-(!numOf(b.id))||a.pos.length-b.pos.length);
     state.field[best.s]=best.c[0].id; n++;
   }
   if(n){commit();toast('Filled '+n+' spot'+(n>1?'s':''));}
@@ -426,7 +444,7 @@ function clearField(){
 function magHTML(p,{spot,warn,sub,extra=''}){
   const n=numOf(p.id);
   return `<div class="mag${warn?' warn':''}${extra}" data-drag data-edit="${p.id}" data-id="${p.id}" tabindex="0" role="button"
-    aria-label="${esc(p.name)}, batting ${n}${spot?', playing '+L(spot):', on the bench'}. Drag to move, or press Enter to edit.">
+    aria-label="${esc(p.name)}, ${n?'batting '+n:'sub'}${spot?', playing '+L(spot):', on the bench'}. Drag to move, or press Enter to edit.">
     ${n?`<b class="num">${n}</b>`:''}<span class="nm">${esc(shortName(p))}</span><span class="ps">${esc(sub)}</span></div>`;
 }
 function renderField(){
@@ -456,10 +474,13 @@ function renderStatus(){
     const p=byId(state.field[s]);
     return `<li class="issue"><span class="tag warn">${L(s)}</span><span>${esc(shortName(p))} isn't listed for ${need(s)}</span></li>`;
   })).join('');
+  items+=all.filter(s=>state.field[s]&&!numOf(state.field[s])).map(s=>`<li class="issue"><span class="tag warn">${L(s)}</span><span>${esc(shortName(byId(state.field[s])))} is a sub but playing the field. Drag him into the top ${batN()} of the order.</span></li>`).join('');
   if(ins<spots.length) items+=`<li class="issue"><span class="meta">Only ${ins} players in today. You need ${spots.length} for a full defense.</span></li>`;
+  const subs=subIds().length;
   $('#status').innerHTML=`<div class="stat-head"><span class="count">${filled}/${spots.length}<small>on the field</small></span>${pill}</div>
     ${items?`<ul class="issues">${items}</ul>`:''}
-    <p class="meta">${ins} in today · ${bench.length} on the bench${outs?` · ${outs} out`:''}</p>`;
+    <p class="meta">${ins} in today${subs?` · ${ins-subs} batting · ${subs} sub${subs>1?'s':''}`:` · ${bench.length} on the bench`}${outs?` · ${outs} out`:''} · <button type="button" class="link" data-act="roll">Who's in</button></p>`;
+  $('#roll').textContent=state.players.length?`Who's in (${ins})`:"Who's in";
 }
 function renderBench(){
   const b=benchIds().map(byId);
@@ -469,13 +490,13 @@ function renderBench(){
 }
 const gripSVG='<svg width="14" height="20" viewBox="0 0 14 20" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="4" r="1.6"/><circle cx="10" cy="4" r="1.6"/><circle cx="4" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/><circle cx="4" cy="16" r="1.6"/><circle cx="10" cy="16" r="1.6"/></g></svg>';
 function renderLineup(){
-  const ids=inOrder();
-  $('#lineCt').textContent=ids.length;
+  const ids=inOrder(), nb=batN(), subs=ids.length-Math.min(ids.length,nb);
+  $('#lineCt').textContent=Math.min(ids.length,nb);
   $('#lineup').innerHTML=ids.map((id,i)=>{
     const p=byId(id), s=spotOf(id), warn=s&&!canPlay(p,s);
-    return `<li class="row" data-drop="row" data-id="${id}">
+    return `${i===nb?`<li class="sub-head">Subs · ${subs} · not batting</li>`:''}<li class="row" data-drop="row" data-id="${id}">
       <span class="grip" data-drag data-id="${id}" aria-hidden="true">${gripSVG}</span>
-      <span class="bnum">${i+1}</span>
+      <span class="bnum${i>=nb?' sub':''}">${i<nb?i+1:'–'}</span>
       <button class="rname" type="button" data-edit="${id}"><b>${esc(p.name)}</b><small>${esc(posText(p))}</small></button>
       <span class="where${s?(warn?' warn':''):' bench'}">${s?L(s):'Bench'}</span></li>`;
   }).join('');
@@ -570,9 +591,12 @@ document.addEventListener('click',e=>{
   const act=t.closest('[data-act]');
   if(act){const k=act.dataset.act;
     if(k==='restore') $('#restoreFile').click();else if(k==='add') $('#add').click();else if(k==='install') doInstall();
-    else if(k==='board') goBoard();else if(k==='refresh') loadLive(false);
+    else if(k==='board') goBoard();else if(k==='refresh') loadLive(false);else if(k==='roll') openRoll();
     else if(k==='preview'){closeSheet();stopLive();renderTeam(cleanLineup(lineupPayload()),'preview');show('team');scrollTo(0,0);}
     return}
+  const rl=t.closest('[data-roll]'); if(rl){const p=byId(rl.dataset.roll);if(p){p.in=!p.in;commit();}return}
+  const ra=t.closest('[data-rollall]'); if(ra){setAll(ra.dataset.rollall==='1');return}
+  const bt=t.closest('[data-bat]'); if(bt){state.bat=bt.dataset.bat==='0'?0:12;commit();return}
   const a=t.closest('[data-assign]'); if(a){assign(a.dataset.assign,a.dataset.spot);if(openSheet&&openSheet.kind==='pick') closeSheet();return}
   const pk=t.closest('[data-pick]'); if(pk){openPicker(pk.dataset.pick);return}
   const ed=t.closest('[data-edit]'); if(ed&&!t.closest('#panel')){openEdit(ed.dataset.edit);return}
@@ -585,6 +609,7 @@ document.addEventListener('keydown',e=>{
 $('#of3').onclick=()=>setOF(3);
 $('#of4').onclick=()=>setOF(4);
 $('#fill').onclick=autofill;
+$('#roll').onclick=openRoll;
 $('#clear').onclick=clearField;
 $('#share').onclick=()=>openShare();
 $('#add').onclick=()=>{
@@ -649,7 +674,7 @@ function openPicker(spot){
     if(state.field[spot]){closeSheet();return}
     const bench=benchIds().map(byId), field=inOrder().filter(id=>spotOf(id)).map(byId);
     const fit=bench.filter(p=>canPlay(p,spot)), rest=bench.filter(p=>!canPlay(p,spot)), movers=field.filter(p=>canPlay(p,spot));
-    const btn=(p,f,label)=>`<button type="button" class="pick${f?' fit':''}" data-assign="${p.id}" data-spot="${spot}"><b>${numOf(p.id)}. ${esc(p.name)}</b><small>${label}</small></button>`;
+    const btn=(p,f,label)=>`<button type="button" class="pick${f?' fit':''}" data-assign="${p.id}" data-spot="${spot}"><b>${numOf(p.id)?numOf(p.id)+'. ':'Sub · '}${esc(p.name)}</b><small>${label}</small></button>`;
     $('#panel').innerHTML=`
       <div class="sheet-head"><h3 id="sheetTitle">Who's playing ${L(spot)}?</h3><button class="btn" type="button" data-close>Cancel</button></div>
       ${fit.length?`<div class="fld"><span>Bench · listed for ${need(spot)}</span><div class="pick-group">${fit.map(p=>btn(p,true,posText(p))).join('')}</div></div>`:''}
@@ -658,6 +683,28 @@ function openPicker(spot){
       ${!bench.length&&!movers.length?'<p class="meta">Nobody is free for this spot. Mark more players in, or move someone off the field.</p>':''}`;
   };
   showSheet('pick',build);
+}
+/* Weekly RSVP check-off: tap players who aren't coming. "Everyone in" resets for next week. */
+function openRoll(){
+  if(!state.players.length){toast('Load your roster first');return}
+  const build=()=>{
+    const ps=state.order.map(byId).filter(Boolean), ins=ps.filter(p=>p.in).length;
+    $('#panel').innerHTML=`
+      <div class="sheet-head"><h3 id="sheetTitle">Who's in this week</h3><button class="btn" type="button" data-close>Done</button></div>
+      <div class="roll-head"><span class="roll-count">${ins} in · ${ps.length-ins} out</span>
+        <span class="foot-btns"><button class="btn" type="button" data-rollall="1">Everyone in</button><button class="btn" type="button" data-rollall="0">Everyone out</button></span></div>
+      <small class="meta">Tap anyone who isn't coming. Only players marked in show on the team's lineup.</small>
+      <div class="roll-list">${ps.map(p=>`<button type="button" class="roll${p.in?' in':''}" data-roll="${p.id}" aria-pressed="${p.in}"><span class="box" aria-hidden="true"></span><b>${esc(p.name)}</b><small>${p.in?'In':'Out'}</small></button>`).join('')}</div>
+      <div class="fld"><span>Batting order</span><div class="seg" role="group" aria-label="Batting order size">
+        <button type="button" data-bat="12" aria-pressed="${state.bat!==0}">Top 12 bat</button><button type="button" data-bat="0" aria-pressed="${state.bat===0}">Everyone bats</button></div>
+        <small>With Top 12, anyone past the 12th spot is listed as a sub without a number.</small></div>`;
+  };
+  showSheet('roll',build);
+}
+function setAll(v){
+  const snap=JSON.stringify(state.players.map(p=>[p.id,p.in]));
+  state.players.forEach(p=>p.in=v); commit();
+  toast(v?'Everyone marked in':'Everyone marked out','Undo',()=>{const m=new Map(JSON.parse(snap));state.players.forEach(p=>{if(m.has(p.id)) p.in=m.get(p.id)});commit();});
 }
 
 /* ---------- shared lineup (published to the repo as lineup.json) ---------- */
@@ -676,16 +723,18 @@ const b64d=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4) s+='=';
 const fullName=p=>p.name.trim()||'New player';
 const callName=p=>(p.nick&&p.nick.trim())||fullName(p);
 function lineupPayload(){
-  return {v:1,of:state.of,t:(state.note||'').trim(),d:Date.now(),
+  /* Only this week's players are published. n = batting order size (0 = everyone bats). */
+  return {v:1,of:state.of,t:(state.note||'').trim(),d:Date.now(),n:state.bat===0?0:12,
     b:inOrder().map(id=>{const p=byId(id);return [shortName(p),fullName(p),spotOf(id)||'']}),
-    o:state.order.map(byId).filter(p=>p&&!p.in).map(callName)};
+    o:[]};
 }
 function cleanLineup(o){
   if(!o||o.v!==1||!Array.isArray(o.b)) return null;
   const of=o.of===3?3:4, str=(x,n)=>typeof x==='string'?x.slice(0,n):'';
   const b=o.b.filter(Array.isArray).slice(0,40).map(e=>{const d=str(e[0],40)||'Player';return [d,str(e[1],60)||d,ORDER[of].includes(e[2])?e[2]:'']});
   const out=Array.isArray(o.o)?o.o.map(x=>str(x,60)).filter(Boolean).slice(0,40):[];
-  return {of,b,o:out,t:str(o.t,80),d:typeof o.d==='number'?o.d:0};
+  const n=(typeof o.n==='number'&&o.n>0)?Math.floor(o.n):0;
+  return {of,b,o:out,n,t:str(o.t,80),d:typeof o.d==='number'?o.d:0};
 }
 const decodeLineup=code=>{try{return cleanLineup(JSON.parse(b64d(code)))}catch(e){return null}};
 function lineupText(){
@@ -693,11 +742,12 @@ function lineupText(){
   const lines=['*Sunday Saucers lineup*'];
   if(note) lines.push(note);
   lines.push('');
-  inOrder().forEach((id,i)=>{const p=byId(id),s=spotOf(id);lines.push(`${i+1}. ${callName(p)} - ${s?L(s):'Bench'}`);});
+  const ids=inOrder(), nb=batN();
+  ids.slice(0,nb).forEach((id,i)=>{const p=byId(id),s=spotOf(id);lines.push(`${i+1}. ${callName(p)} - ${s?L(s):'Bench'}`);});
+  const subs=ids.slice(nb).map(byId);
+  if(subs.length) lines.push('','Subs: '+subs.map(p=>callName(p)+(spotOf(p.id)?' ('+L(spotOf(p.id))+')':'')).join(', '));
   const open=ORDER[state.of].filter(s=>!s.startsWith('DH')&&!state.field[s]);
   if(open.length) lines.push('','Still need: '+open.join(', '));
-  const out=state.order.map(byId).filter(p=>p&&!p.in);
-  if(out.length) lines.push('','Out: '+out.map(callName).join(', '));
   lines.push('','Field view: '+appURL());
   return lines.join('\n');
 }
@@ -777,7 +827,7 @@ function backup(){
   if(!state.players.length){toast('Nothing to back up yet');return}
   const data={app:'saucers-lineup',v:1,savedAt:new Date().toISOString(),
     players:state.players.map(p=>({id:p.id,name:p.name,nick:p.nick||'',pos:p.pos,in:p.in})),
-    order:state.order,of:state.of,field:state.field,note:state.note||''};
+    order:state.order,of:state.of,field:state.field,note:state.note||'',bat:state.bat===0?0:12};
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
   a.download='saucers-roster-'+new Date().toISOString().slice(0,10)+'.json';
@@ -799,7 +849,7 @@ function restore(file){
     if(!players.length) throw 0;
     const snap=JSON.stringify(state);
     state={players,order:Array.isArray(d.order)?d.order.filter(x=>typeof x==='string'):[],of:d.of===3?3:4,
-      field:(d.field&&typeof d.field==='object'&&!Array.isArray(d.field))?Object.assign({},d.field):{},note:typeof d.note==='string'?d.note:'',sample:false};
+      field:(d.field&&typeof d.field==='object'&&!Array.isArray(d.field))?Object.assign({},d.field):{},note:typeof d.note==='string'?d.note:'',bat:d.bat===0?0:12,sample:false};
     commit();
     toast('Loaded '+players.length+' players','Undo',()=>{state=JSON.parse(snap);commit();});
   }).catch(()=>toast("That file isn't a Saucers roster backup"));
@@ -843,18 +893,18 @@ function renderTeam(Lu,mode){
     el.innerHTML=head(msg[0])+`</div></header><p class="note">${msg[1]}</p><div class="foot-btns">${retry}${latest}</div>`+foot;
     return;
   }
-  const sp=SPOTS[Lu.of], taken={};
-  Lu.b.forEach((e,i)=>{if(e[2]&&!taken[e[2]]) taken[e[2]]={d:e[0],n:i+1};});
+  const sp=SPOTS[Lu.of], taken={}, nb=Lu.n||Infinity, bats=Math.min(Lu.b.length,nb), subs=Lu.b.length-bats;
+  Lu.b.forEach((e,i)=>{if(e[2]&&!taken[e[2]]) taken[e[2]]={d:e[0],n:i<nb?i+1:0};});
   const slots=ORDER[Lu.of].map(s=>{
     const [x,y]=sp[s], m=taken[s];
-    if(m) return `<div class="slot" style="left:${x}%;top:${y}%"><div class="mag ro"><b class="num">${m.n}</b><span class="nm">${esc(m.d)}</span><span class="ps">${L(s)}</span></div></div>`;
+    if(m) return `<div class="slot" style="left:${x}%;top:${y}%"><div class="mag ro">${m.n?`<b class="num">${m.n}</b>`:''}<span class="nm">${esc(m.d)}</span><span class="ps">${L(s)}</span></div></div>`;
     if(s.startsWith('DH')) return '';
     return `<div class="slot" style="left:${x}%;top:${y}%"><span class="open ro">${s}</span></div>`;
   }).join('');
   const first=d=>d.split(/[\s.]+/)[0].toLowerCase();
   const rows=Lu.b.map((e,i)=>{
     const [d,full,s]=e, alt=!full.toLowerCase().includes(first(d));
-    return `<li class="row ro"><span class="bnum">${i+1}</span><span class="rname"><b>${esc(full)}</b>${alt?`<small>${esc(d)}</small>`:''}</span><span class="where${s?'':' bench'}">${s?L(s):'Bench'}</span></li>`;
+    return `${i===nb?`<li class="sub-head">Subs · ${subs}</li>`:''}<li class="row ro"><span class="bnum${i>=nb?' sub':''}">${i<nb?i+1:'–'}</span><span class="rname"><b>${esc(full)}</b>${alt?`<small>${esc(d)}</small>`:''}</span><span class="where${s?'':' bench'}">${s?L(s):'Bench'}</span></li>`;
   }).join('');
   const open=ORDER[Lu.of].filter(s=>!s.startsWith('DH')&&!taken[s]);
   const status={
@@ -874,9 +924,8 @@ function renderTeam(Lu,mode){
         ${open.length?`<p class="meta center">Still open: ${open.join(', ')}</p>`:''}
       </section>
       <section class="col" aria-label="Batting order">
-        <h2>Batting order <span class="ct">${Lu.b.length}</span></h2>
+        <h2>Batting order <span class="ct">${bats}</span></h2>
         <ol class="lineup">${rows||'<li class="empty-roster"><span>No players listed.</span></li>'}</ol>
-        ${Lu.o.length?`<p class="meta">Out today: ${Lu.o.map(esc).join(', ')}</p>`:''}
       </section>
     </main>`+foot;
 }
