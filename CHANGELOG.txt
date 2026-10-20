@@ -203,6 +203,13 @@ V4
   commissioner and a place to keep standings for our division. Many
   teams, schedules, scores and standings, with each team managing its
   own lineup. To be worked out when we get there.
+V2 / V3 additions
+- Formal name plus a nickname / alternate name for each player, so the
+  stats show the right name while the lineup keeps using nicknames.
+  (Decided: the published lineup and game log stay as they are for now.)
+- Mid-game substitutions: the scorekeeper taps players in and out
+  during the game, which gives real innings / playing time. Goes with
+  the live score feed.
 Ideas
 - First names / nicknames only in the published lineup (lineup.json
   is public).
