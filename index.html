@@ -165,7 +165,7 @@ body.dragging .slot.over.no .mag,body.dragging .slot.over.no .open{box-shadow:0 
 .fld{display:flex;flex-direction:column;gap:8px}
 .fld>span{font:700 13px/1 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .fld small{color:var(--muted);font-size:12px}
-input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%}
+input[type=text],input[type=url]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{min-width:48px;min-height:40px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font:700 15px/1 var(--f-display);letter-spacing:.05em;cursor:pointer;color:var(--ink)}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
@@ -228,6 +228,23 @@ input[type=text]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10p
 .game-note{margin:6px 0 0;font:600 17px/1.3 var(--f-body)}
 .game-info{display:flex;flex-wrap:wrap;gap:8px 12px;margin:10px 0 0;padding:0}
 .game-info>div{display:flex;flex-direction:column;gap:2px;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+.game-info>a.gi-link{display:flex;flex-direction:column;gap:2px;min-width:0;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--sauce);border-radius:12px;padding:8px 14px}
+.game-info>a.gi-link:focus-visible{outline:3px solid var(--sauce);outline-offset:2px}
+.gi-map{font:700 12px/1.2 var(--f-display);letter-spacing:.06em;color:var(--sauce)}
+.sug{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 8px}
+.sug:empty{display:none}
+.sug small{flex-basis:100%;color:var(--muted)}
+.sugbtn{min-height:38px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper);font:600 14px var(--f-body);cursor:pointer;color:var(--ink)}
+.sugbtn:hover{border-color:var(--sauce)}
+.fl-list{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.fl{border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:0 12px}
+.fl[open]{padding-bottom:12px}
+.fl .fld{margin-top:12px}
+.fl .danger{margin-top:14px}
+.fl summary{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:46px;cursor:pointer;list-style:none}
+.fl summary::-webkit-details-marker{display:none}
+.fl summary b{font:600 16px var(--f-body)}
+.fl-bad{font:700 11px var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--warn,#b45309)}
 .game-info dt{font:700 11px/1.2 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .game-info dd{margin:0;font:700 20px/1.2 var(--f-display);letter-spacing:.02em;overflow-wrap:anywhere}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -354,11 +371,32 @@ const SPOTS={
   3:{P:[50,71],C:[50,92],'1B':[71,62],'2B':[60,49],SS:[40,49],'3B':[29,62],LF:[19,32],CF:[50,18],RF:[81,32],DH:[14,77],DH2:[14,92]}
 };
 const ORDER={4:['P','C','1B','2B','3B','SS','LF','LCF','RCF','RF','DH','DH2'],3:['P','C','1B','2B','3B','SS','LF','CF','RF','DH','DH2']};
-function sample(){return {players:[],order:[],of:4,field:{},note:'',gtime:'',gfield:'',bat:12,sample:false};}
+/* Field list: name, nicknames (comma separated), Google Maps link. Preloaded; editable under Publish > Manage fields. */
+const DEFAULT_FIELDS=[
+  ['Berry Homes','Berry','https://maps.app.goo.gl/nPCS21R6uXok8WNz7'],
+  ['Willowbrook Field 1','Willowbrook 1, WB 1, Willow 1','https://maps.app.goo.gl/KCJDdukwvCBSv6En6'],
+  ['Willowbrook Field 2','Willowbrook 2, WB 2, Willow 2','https://maps.app.goo.gl/fbuNVd1yqB3fVmV67'],
+  ['Willowbrook Field 3','Willowbrook 3, WB 3, Willow 3','https://maps.app.goo.gl/oiPXrVrvw1Zz5WW8A'],
+  ['Willowbrook Field 4','Willowbrook 4, WB 4, Willow 4','https://maps.app.goo.gl/DAvWX8vdqwkbWMDo6'],
+  ['Willowbrook Field 5','Willowbrook 5, WB 5, Willow 5','https://maps.app.goo.gl/Qu1W24dYZ1jXhLXi9'],
+  ['Field of Dreams','Dreams','https://maps.app.goo.gl/evNLRM7GwzfmL8oo9'],
+  ['Bloomingdale Park','Bloomingdale','https://maps.app.goo.gl/9yMfGWBgAFjAxqPX9'],
+  ['South Beach 1','SB 1','https://maps.app.goo.gl/xfSPJBcKGEaNnJiW8'],
+  ['South Beach 2','SB 2','https://maps.app.goo.gl/z5Ycc6PTM9i1V6nZ7'],
+  ['South Beach 3','SB 3','https://maps.app.goo.gl/VR1vQA1wak64QamT8'],
+  ['South Beach 4','SB 4','https://maps.app.goo.gl/51dsunK4XwMv2m5D9'],
+  ['South Beach 5','SB 5','https://maps.app.goo.gl/H88s7qRxXqvtiFci8'],
+  ['South Beach 6','SB 6','https://maps.app.goo.gl/KyK9YVmXEiwJxpM28'],
+  ['South Beach 7','SB 7','https://maps.app.goo.gl/PPm4fr3Qm5Pf6J9E7'],
+  ['South Beach 8','SB 8','https://maps.app.goo.gl/4stKHg3KxGTLR4zK9'],
+  ['Walker Park','Walker','https://maps.app.goo.gl/rSETyLW9n1VuhBe79']
+];
+const defaultFields=()=>DEFAULT_FIELDS.map((f,i)=>({id:'f'+i,name:f[0],alias:f[1],url:f[2]}));
+function sample(){return {players:[],order:[],of:4,field:{},note:'',gtime:'',gfield:'',fields:defaultFields(),bat:12,sample:false};}
 function load(){
   try{
     const s=JSON.parse(localStorage.getItem(KEY));
-    if(s&&Array.isArray(s.players)&&Array.isArray(s.order)&&s.field&&typeof s.field==='object'&&(s.of===3||s.of===4)){if(s.bat!==0) s.bat=12;return s;}
+    if(s&&Array.isArray(s.players)&&Array.isArray(s.order)&&s.field&&typeof s.field==='object'&&(s.of===3||s.of===4)){if(s.bat!==0) s.bat=12;if(!Array.isArray(s.fields)) s.fields=defaultFields();return s;}
   }catch(e){}
   return sample();
 }
@@ -605,7 +643,7 @@ document.addEventListener('click',e=>{
   const act=t.closest('[data-act]');
   if(act){const k=act.dataset.act;
     if(k==='restore') $('#restoreFile').click();else if(k==='add') $('#add').click();else if(k==='install') doInstall();
-    else if(k==='board') goBoard();else if(k==='refresh') loadLive(false);else if(k==='roll') openRoll();
+    else if(k==='board') goBoard();else if(k==='refresh') loadLive(false);else if(k==='roll') openRoll();else if(k==='fields'){closeSheet();openFields();}
     else if(k==='preview'){closeSheet();stopLive();renderTeam(cleanLineup(lineupPayload()),'preview');show('team');scrollTo(0,0);}
     return}
   const rl=t.closest('[data-roll]'); if(rl){const p=byId(rl.dataset.roll);if(p){p.in=!p.in;commit();}return}
@@ -736,9 +774,23 @@ const safeJSON=s=>{try{return JSON.parse(s)}catch(e){return null}};
 const b64d=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4) s+='=';const bin=atob(s);return new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0)));};
 const fullName=p=>p.name.trim()||'New player';
 const callName=p=>(p.nick&&p.nick.trim())||fullName(p);
+const MAP_OK=/^https:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?google\.com\/maps|maps\.google\.com|maps\.apple\.com)\//i;
+const safeMapUrl=u=>{u=String(u||'').trim();return MAP_OK.test(u)&&u.length<=300?u:'';};
+const normF=t=>String(t||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\bfield\b/g,' ').replace(/\s+/g,' ').trim();
+const fieldNames=f=>[f.name].concat(String(f.alias||'').split(',')).map(normF).filter(Boolean);
+function fieldMatches(text){
+  const q=normF(text); if(q.length<2) return [];
+  const list=state.fields||[];
+  const exact=list.filter(f=>fieldNames(f).includes(q));
+  if(exact.length) return exact;
+  if(q.length<3) return [];
+  return list.filter(f=>fieldNames(f).some(n=>n.includes(q)));
+}
+const resolveField=text=>{const m=fieldMatches(text);return m.length===1?m[0]:null;};
+const fieldLink=text=>{const f=resolveField(text);return f?safeMapUrl(f.url):'';};
 function lineupPayload(){
   /* Only this week's players are published. n = batting order size (0 = everyone bats). */
-  return {v:1,of:state.of,t:(state.note||'').trim(),tm:(state.gtime||'').trim(),fl:(state.gfield||'').trim(),d:Date.now(),n:state.bat===0?0:12,
+  return {v:1,of:state.of,t:(state.note||'').trim(),tm:(state.gtime||'').trim(),fl:(state.gfield||'').trim(),fu:fieldLink(state.gfield),d:Date.now(),n:state.bat===0?0:12,
     b:inOrder().map(id=>{const p=byId(id);return [shortName(p),fullName(p),spotOf(id)||'']}),
     o:[]};
 }
@@ -748,7 +800,7 @@ function cleanLineup(o){
   const b=o.b.filter(Array.isArray).slice(0,40).map(e=>{const d=str(e[0],40)||'Player';return [d,str(e[1],60)||d,ORDER[of].includes(e[2])?e[2]:'']});
   const out=Array.isArray(o.o)?o.o.map(x=>str(x,60)).filter(Boolean).slice(0,40):[];
   const n=(typeof o.n==='number'&&o.n>0)?Math.floor(o.n):0;
-  return {of,b,o:out,n,t:str(o.t,80),tm:str(o.tm,60),fl:str(o.fl,60),d:typeof o.d==='number'?o.d:0};
+  return {of,b,o:out,n,t:str(o.t,80),tm:str(o.tm,60),fl:str(o.fl,60),fu:safeMapUrl(str(o.fu,300)),d:typeof o.d==='number'?o.d:0};
 }
 const decodeLineup=code=>{try{return cleanLineup(JSON.parse(b64d(code)))}catch(e){return null}};
 function lineupText(){
@@ -758,6 +810,7 @@ function lineupText(){
   const tm=(state.gtime||'').trim(), fl=(state.gfield||'').trim();
   if(tm) lines.push('Time: '+tm);
   if(fl) lines.push('Field: '+fl);
+  const fu=fieldLink(fl); if(fu) lines.push('Map: '+fu);
   lines.push('');
   const ids=inOrder(), nb=batN();
   ids.slice(0,nb).forEach((id,i)=>{const p=byId(id),s=spotOf(id);lines.push(`${i+1}. ${callName(p)} - ${s?L(s):'Bench'}`);});
@@ -803,6 +856,8 @@ function openShare(){
         <label class="fld"><span>Time</span><input type="text" id="gTime" value="${esc(state.gtime||'')}" placeholder="8:20 &amp; 9:40" maxlength="60" autocomplete="off"></label>
         <label class="fld"><span>Field</span><input type="text" id="gField" value="${esc(state.gfield||'')}" placeholder="Willowbrook" maxlength="60" autocomplete="off"></label>
       </div>
+      <div id="fieldSug" class="sug" aria-live="polite"></div>
+      <button type="button" class="link" data-act="fields">Manage fields</button>
       <div class="fld"><button class="btn primary big" type="button" id="pubBtn">Publish to team</button>
         <small id="pubStatus">Updates the lineup at the team link. Anyone with it open sees the change within about a minute.</small></div>
       <div class="fld"><span>Tell the chat</span><textarea class="msg" id="msgText" aria-label="Message for the team chat"></textarea>
@@ -819,7 +874,17 @@ function openShare(){
     refresh();
     note.oninput=()=>{state.note=note.value;save();refresh();};
     $('#gTime').oninput=e=>{state.gtime=e.target.value;save();refresh();};
-    $('#gField').oninput=e=>{state.gfield=e.target.value;save();refresh();};
+    const gf=$('#gField'), sug=$('#fieldSug');
+    const showSug=()=>{
+      const m=fieldMatches(gf.value);
+      if(!gf.value.trim()){sug.innerHTML='';return}
+      if(m.length===1){sug.innerHTML=safeMapUrl(m[0].url)?'<small class="ok-text">Map link will be added: '+esc(m[0].name)+'</small>':'<small>'+esc(m[0].name)+' has no valid map link. Fix it under Manage fields.</small>';return}
+      if(m.length>1){sug.innerHTML='<small>Tap one to add its map link:</small>'+m.slice(0,8).map(f=>`<button type="button" class="sugbtn" data-fid="${f.id}">${esc(f.name)}</button>`).join('');return}
+      sug.innerHTML='<small>Not in your field list, so it shows as plain text.</small>';
+    };
+    gf.oninput=()=>{state.gfield=gf.value;save();refresh();showSug();};
+    sug.onclick=e=>{const b=e.target.closest('[data-fid]');if(!b)return;const f=(state.fields||[]).find(x=>x.id===b.dataset.fid);if(!f)return;gf.value=f.name;state.gfield=f.name;save();refresh();showSug();};
+    showSug();
     ta.oninput=setWa;
     const sn=$('#shareNative'); if(sn) sn.onclick=()=>{navigator.share({text:ta.value}).catch(()=>{});};
     $('#copyMsg').onclick=()=>{
@@ -845,12 +910,41 @@ function openShare(){
   showSheet('share',build);
 }
 
+function openFields(){
+  const build=()=>{
+    const fs=state.fields||(state.fields=defaultFields());
+    $('#panel').innerHTML=`
+      <div class="sheet-head"><h3 id="sheetTitle">Fields</h3><button class="btn" type="button" id="fDone">Done</button></div>
+      <small class="meta">When the Field box matches a name or nickname here, the team gets a tappable map link. Nicknames are separated by commas. Paste a Google Maps share link.</small>
+      <div class="fl-list">${fs.map(f=>`<details class="fl" data-id="${f.id}"${f.isNew?' open':''}>
+        <summary><b>${esc(f.name||'New field')}</b>${safeMapUrl(f.url)?'':'<span class="fl-bad">no map link</span>'}</summary>
+        <label class="fld"><span>Name</span><input type="text" data-k="name" value="${esc(f.name)}" autocomplete="off"></label>
+        <label class="fld"><span>Nicknames</span><input type="text" data-k="alias" value="${esc(f.alias||'')}" placeholder="WB 2, Willow 2" autocomplete="off"></label>
+        <label class="fld"><span>Google Maps link</span><input type="url" data-k="url" value="${esc(f.url||'')}" placeholder="https://maps.app.goo.gl/..." autocomplete="off" inputmode="url"></label>
+        <button type="button" class="danger" data-rm="${f.id}">Remove field</button></details>`).join('')}</div>
+      <button type="button" class="btn" id="fAdd">Add field</button>
+      <button type="button" class="link" id="fReset">Restore the original list</button>`;
+    const list=$('.fl-list');
+    list.oninput=e=>{const i=e.target.closest('[data-k]');if(!i)return;const d=i.closest('.fl'),f=fs.find(x=>x.id===d.dataset.id);if(!f)return;f[i.dataset.k]=i.value;delete f.isNew;save();
+      if(i.dataset.k==='name') d.querySelector('summary b').textContent=i.value||'New field';
+      if(i.dataset.k==='url'){const s=d.querySelector('summary'),bad=s.querySelector('.fl-bad');if(safeMapUrl(i.value)){bad&&bad.remove();}else if(!bad){s.insertAdjacentHTML('beforeend','<span class="fl-bad">no map link</span>');}}};
+    list.onclick=e=>{const r=e.target.closest('[data-rm]');if(!r)return;if(r.dataset.armed!=='1'){r.dataset.armed='1';r.textContent='Tap again to remove';setTimeout(()=>{if(document.contains(r)){r.dataset.armed='';r.textContent='Remove field';}},3000);return}
+      state.fields=fs.filter(x=>x.id!==r.dataset.rm);save();build();};
+    $('#fAdd').onclick=()=>{fs.push({id:'f'+Date.now().toString(36),name:'',alias:'',url:'',isNew:true});save();build();const l=$('.fl-list .fl:last-child input');l&&l.focus();};
+    let armed=false;
+    $('#fReset').onclick=()=>{if(!armed){armed=true;$('#fReset').textContent='Tap again to replace the list with the original 17';setTimeout(()=>{armed=false;if($('#fReset'))$('#fReset').textContent='Restore the original list';},3500);return}
+      state.fields=defaultFields();save();build();toast('Field list restored');};
+    $('#fDone').onclick=()=>{closeSheet();openShare();};
+  };
+  showSheet('fields',build);
+}
+
 /* ---------- backup / restore ---------- */
 function backup(){
   if(!state.players.length){toast('Nothing to back up yet');return}
   const data={app:'saucers-lineup',v:1,savedAt:new Date().toISOString(),
     players:state.players.map(p=>({id:p.id,name:p.name,nick:p.nick||'',pos:p.pos,in:p.in})),
-    order:state.order,of:state.of,field:state.field,note:state.note||'',gtime:state.gtime||'',gfield:state.gfield||'',bat:state.bat===0?0:12};
+    order:state.order,of:state.of,field:state.field,note:state.note||'',gtime:state.gtime||'',gfield:state.gfield||'',fields:(state.fields||[]).map(f=>({id:f.id,name:f.name,alias:f.alias||'',url:f.url||''})),bat:state.bat===0?0:12};
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
   a.download='saucers-roster-'+new Date().toISOString().slice(0,10)+'.json';
@@ -872,7 +966,7 @@ function restore(file){
     if(!players.length) throw 0;
     const snap=JSON.stringify(state);
     state={players,order:Array.isArray(d.order)?d.order.filter(x=>typeof x==='string'):[],of:d.of===3?3:4,
-      field:(d.field&&typeof d.field==='object'&&!Array.isArray(d.field))?Object.assign({},d.field):{},note:typeof d.note==='string'?d.note:'',gtime:typeof d.gtime==='string'?d.gtime.slice(0,60):'',gfield:typeof d.gfield==='string'?d.gfield.slice(0,60):'',bat:d.bat===0?0:12,sample:false};
+      field:(d.field&&typeof d.field==='object'&&!Array.isArray(d.field))?Object.assign({},d.field):{},note:typeof d.note==='string'?d.note:'',gtime:typeof d.gtime==='string'?d.gtime.slice(0,60):'',gfield:typeof d.gfield==='string'?d.gfield.slice(0,60):'',fields:Array.isArray(d.fields)?d.fields.filter(f=>f&&typeof f.name==='string').slice(0,80).map((f,i)=>({id:(typeof f.id==='string'&&/^[\w-]{1,40}$/.test(f.id))?f.id:'f'+i+Date.now().toString(36),name:f.name.slice(0,60),alias:typeof f.alias==='string'?f.alias.slice(0,120):'',url:typeof f.url==='string'?f.url.slice(0,300):''})):defaultFields(),bat:d.bat===0?0:12,sample:false};
     commit();
     toast('Loaded '+players.length+' players','Undo',()=>{state=JSON.parse(snap);commit();});
   }).catch(()=>toast("That file isn't a Saucers roster backup"));
@@ -942,7 +1036,7 @@ function renderTeam(Lu,mode){
   }[mode]||'';
   el.innerHTML=head('Lineup')+`
       ${Lu.t?`<p class="game-note">${esc(Lu.t)}</p>`:''}
-      ${(Lu.tm||Lu.fl)?`<dl class="game-info">${Lu.tm?`<div><dt>Time</dt><dd>${esc(Lu.tm)}</dd></div>`:''}${Lu.fl?`<div><dt>Field</dt><dd>${esc(Lu.fl)}</dd></div>`:''}</dl>`:''}
+      ${(Lu.tm||Lu.fl)?`<dl class="game-info">${Lu.tm?`<div><dt>Time</dt><dd>${esc(Lu.tm)}</dd></div>`:''}${Lu.fl?(Lu.fu?`<a class="gi-link" href="${esc(Lu.fu)}" target="_blank" rel="noopener" aria-label="Field: ${esc(Lu.fl)}. Opens the map."><dt>Field</dt><dd>${esc(Lu.fl)}</dd><span class="gi-map">Tap for map ›</span></a>`:`<div><dt>Field</dt><dd>${esc(Lu.fl)}</dd></div>`):''}</dl>`:''}
       <p class="meta">${Lu.d?'Posted '+esc(fmtWhen(Lu.d))+' · ':''}${Lu.b.length} players in today</p>${mode==='live'||mode==='saved'?status:''}</div></header>
     ${mode==='live'||mode==='saved'?'':status}
     <main class="grid">

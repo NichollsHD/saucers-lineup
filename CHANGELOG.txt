@@ -4,11 +4,33 @@ Live app:  https://nichollshd.github.io/saucers-lineup/
 Repo:      https://github.com/NichollsHD/saucers-lineup
 
 Newest changes at the top. Each entry: version, date, what changed.
-When the app itself changes, also bump CACHE in sw.js (saucers-v7 -> v8...)
+When the app itself changes, also bump CACHE in sw.js (saucers-v8 -> v9...)
 so installed phones pick up the update.
 
 Note: "Publish lineup: ..." commits in the repo history are weekly lineups
 published from the app, not code changes. They aren't listed here.
+
+
+---------------------------------------------------------------------
+v1.6  -  2026-10-19   (sw.js cache: saucers-v8)
+---------------------------------------------------------------------
+ADDED
+- Field list with map links. 17 fields are preloaded: Berry Homes,
+  Willowbrook Fields 1-5, Field of Dreams, Bloomingdale Park, South
+  Beach 1-8, Walker Park. Each has a name, nicknames (like WB 2 or
+  SB 7) and a Google Maps link.
+- Field box suggestions on the Publish screen. Type part of a name or
+  a nickname and matching fields appear to tap. "Willowbrook" shows
+  all five Willowbrook fields to pick from. The box is still free
+  text, so a field that isn't in the list shows as plain text.
+- Team view: when the field matches, the Field tile becomes a tappable
+  link ("Tap for map") that opens Google Maps.
+- WhatsApp message: adds a "Map:" line with the link under the field.
+- Manage fields (Publish screen): edit names, nicknames and links,
+  add or remove fields, or restore the original list. Saved on the
+  phone and included in Back up roster / Restore roster.
+- Safety: only Google Maps and Apple Maps links are accepted; anything
+  else is ignored.
 
 
 ---------------------------------------------------------------------
@@ -151,3 +173,4 @@ Ideas
 - First names / nicknames only in the published lineup (lineup.json
   is public).
 - Short nichollshd.github.io link that forwards to the app.
+- Field nicknames are guesses (WB 2, SB 7...). Edit them in Manage fields.
