@@ -169,6 +169,11 @@ V2 / V3
   score, inning, outs, and major events (quick dropdowns) but can't
   change the lineup. Likely its own small repo/key so the scorekeeper
   can't touch lineup.json.
+V4
+- League edition: scale the app beyond one team, for the league
+  commissioner and a place to keep standings for our division. Many
+  teams, schedules, scores and standings, with each team managing its
+  own lineup. To be worked out when we get there.
 Ideas
 - First names / nicknames only in the published lineup (lineup.json
   is public).
