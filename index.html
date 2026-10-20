@@ -165,7 +165,7 @@ body.dragging .slot.over.no .mag,body.dragging .slot.over.no .open{box-shadow:0 
 .fld{display:flex;flex-direction:column;gap:8px}
 .fld>span{font:700 13px/1 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .fld small{color:var(--muted);font-size:12px}
-input[type=text],input[type=url]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%}
+input[type=text],input[type=url],input[type=date]{font:500 17px var(--f-body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{min-width:48px;min-height:40px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font:700 15px/1 var(--f-display);letter-spacing:.05em;cursor:pointer;color:var(--ink)}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
@@ -236,6 +236,18 @@ input[type=text],input[type=url]{font:500 17px var(--f-body);padding:10px 12px;b
 .sug small{flex-basis:100%;color:var(--muted)}
 .sugbtn{min-height:38px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper);font:600 14px var(--f-body);cursor:pointer;color:var(--ink)}
 .sugbtn:hover{border-color:var(--sauce)}
+.log-h{margin:16px 0 8px;font:700 13px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.log-tbl{flex:none;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper)}
+.log-row{flex:none;display:grid;grid-template-columns:1fr 44px 48px 52px;gap:6px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);text-align:center;font:600 16px var(--f-display)}
+.log-row:first-child{border-top:0}
+.log-row.head{font:700 11px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--card)}
+.log-nm{display:flex;flex-direction:column;text-align:left;min-width:0}
+.log-nm b{font:600 16px var(--f-body)}
+.log-nm small{font:500 12px var(--f-body);color:var(--muted);overflow-wrap:anywhere}
+.log-row span:first-child{text-align:left}
+.log-games{flex:none;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.log-games li{flex:none;display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:9px 12px}
+.log-games small{color:var(--muted);font:500 13px var(--f-body)}
 .fl-list{display:flex;flex-direction:column;gap:6px;margin:10px 0}
 .fl{border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:0 12px}
 .fl[open]{padding-bottom:12px}
@@ -392,7 +404,7 @@ const DEFAULT_FIELDS=[
   ['Walker Park','Walker','https://maps.app.goo.gl/rSETyLW9n1VuhBe79']
 ];
 const defaultFields=()=>DEFAULT_FIELDS.map((f,i)=>({id:'f'+i,name:f[0],alias:f[1],url:f[2]}));
-function sample(){return {players:[],order:[],of:4,field:{},note:'',gtime:'',gfield:'',fields:defaultFields(),bat:12,sample:false};}
+function sample(){return {players:[],order:[],of:4,field:{},note:'',gtime:'',gfield:'',ggame:'1',gdate:'',fields:defaultFields(),bat:12,sample:false};}
 function load(){
   try{
     const s=JSON.parse(localStorage.getItem(KEY));
@@ -643,7 +655,7 @@ document.addEventListener('click',e=>{
   const act=t.closest('[data-act]');
   if(act){const k=act.dataset.act;
     if(k==='restore') $('#restoreFile').click();else if(k==='add') $('#add').click();else if(k==='install') doInstall();
-    else if(k==='board') goBoard();else if(k==='refresh') loadLive(false);else if(k==='roll') openRoll();else if(k==='fields'){closeSheet();openFields();}
+    else if(k==='board') goBoard();else if(k==='refresh') loadLive(false);else if(k==='roll') openRoll();else if(k==='fields'){closeSheet();openFields();}else if(k==='log'){closeSheet();openLog();}
     else if(k==='preview'){closeSheet();stopLive();renderTeam(cleanLineup(lineupPayload()),'preview');show('team');scrollTo(0,0);}
     return}
   const rl=t.closest('[data-roll]'); if(rl){const p=byId(rl.dataset.roll);if(p){p.in=!p.in;commit();}return}
@@ -788,9 +800,13 @@ function fieldMatches(text){
 }
 const resolveField=text=>{const m=fieldMatches(text);return m.length===1?m[0]:null;};
 const fieldLink=text=>{const f=resolveField(text);return f?safeMapUrl(f.url):'';};
+/* Game picker: '1' / '2' = double-header games, 'x' = other game, 'n' = don't log (practice / test publish). */
+const gGame=()=>['1','2','x','n'].includes(state.ggame)?state.ggame:'1';
+const todayStr=()=>new Date().toLocaleDateString('en-CA');
+const gDate=()=>/^\d{4}-\d{2}-\d{2}$/.test(state.gdate||'')?state.gdate:todayStr();
 function lineupPayload(){
   /* Only this week's players are published. n = batting order size (0 = everyone bats). */
-  return {v:1,of:state.of,t:(state.note||'').trim(),tm:(state.gtime||'').trim(),fl:(state.gfield||'').trim(),fu:fieldLink(state.gfield),d:Date.now(),n:state.bat===0?0:12,
+  return {v:1,of:state.of,t:(state.note||'').trim(),tm:(state.gtime||'').trim(),fl:(state.gfield||'').trim(),fu:fieldLink(state.gfield),g:(gGame()==='1'||gGame()==='2')?gGame():'',d:Date.now(),n:state.bat===0?0:12,
     b:inOrder().map(id=>{const p=byId(id);return [shortName(p),fullName(p),spotOf(id)||'']}),
     o:[]};
 }
@@ -800,12 +816,12 @@ function cleanLineup(o){
   const b=o.b.filter(Array.isArray).slice(0,40).map(e=>{const d=str(e[0],40)||'Player';return [d,str(e[1],60)||d,ORDER[of].includes(e[2])?e[2]:'']});
   const out=Array.isArray(o.o)?o.o.map(x=>str(x,60)).filter(Boolean).slice(0,40):[];
   const n=(typeof o.n==='number'&&o.n>0)?Math.floor(o.n):0;
-  return {of,b,o:out,n,t:str(o.t,80),tm:str(o.tm,60),fl:str(o.fl,60),fu:safeMapUrl(str(o.fu,300)),d:typeof o.d==='number'?o.d:0};
+  return {of,b,o:out,n,t:str(o.t,80),tm:str(o.tm,60),fl:str(o.fl,60),fu:safeMapUrl(str(o.fu,300)),g:(o.g==='1'||o.g==='2')?o.g:'',d:typeof o.d==='number'?o.d:0};
 }
 const decodeLineup=code=>{try{return cleanLineup(JSON.parse(b64d(code)))}catch(e){return null}};
 function lineupText(){
   const note=(state.note||'').trim();
-  const lines=['*Sunday Saucers lineup*'];
+  const gm=gGame(), lines=['*Sunday Saucers lineup'+((gm==='1'||gm==='2')?' - Game '+gm:'')+'*'];
   if(note) lines.push(note);
   const tm=(state.gtime||'').trim(), fl=(state.gfield||'').trim();
   if(tm) lines.push('Time: '+tm);
@@ -823,7 +839,7 @@ function lineupText(){
 }
 
 /* ---------- GitHub publishing (manager only) ---------- */
-const ghURL=()=>`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`;
+const ghURL=(path)=>`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${path||GH.path}`;
 const ghHeaders=t=>({Authorization:'Bearer '+(t||getToken()),Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'});
 function ghError(status){
   if(status===401) return 'GitHub rejected your manager key. It may have expired. Sign out and sign in with a new key.';
@@ -831,19 +847,35 @@ function ghError(status){
   if(status===0) return 'No connection. Try again when you have signal.';
   return 'GitHub had a problem ('+status+'). Try again in a minute.';
 }
-async function ghPublish(payload){
+/* Write a JSON file in the repo. make(existing) returns the new content; existing is the parsed current file or null. */
+async function ghWrite(path,message,make){
   const toB64=s=>{const by=new TextEncoder().encode(s);let bin='';for(const x of by) bin+=String.fromCharCode(x);return btoa(bin);};
-  for(let attempt=0;attempt<2;attempt++){
-    let g,p,sha;
-    try{g=await fetch(ghURL()+'?ref='+GH.branch,{headers:ghHeaders(),cache:'no-store'});}catch(e){throw ghError(0)}
-    if(g.ok) sha=(await g.json()).sha; else if(g.status!==404) throw ghError(g.status);
-    const body={message:'Publish lineup'+(payload.t?': '+payload.t:''),content:toB64(JSON.stringify(payload)),branch:GH.branch};
+  for(let attempt=0;attempt<3;attempt++){
+    let g,p,sha,existing=null;
+    try{g=await fetch(ghURL(path)+'?ref='+GH.branch+'&t='+Date.now(),{headers:ghHeaders(),cache:'no-store'});}catch(e){throw ghError(0)}
+    if(g.ok){const j=await g.json();sha=j.sha;try{existing=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(String(j.content||'').replace(/\s/g,'')),c=>c.charCodeAt(0))));}catch(e){existing=null;}}
+    else if(g.status!==404) throw ghError(g.status);
+    const body={message,content:toB64(JSON.stringify(make(existing))),branch:GH.branch};
     if(sha) body.sha=sha;
-    try{p=await fetch(ghURL(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});}catch(e){throw ghError(0)}
+    try{p=await fetch(ghURL(path),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify(body)});}catch(e){throw ghError(0)}
     if(p.ok) return;
     if(p.status!==409&&p.status!==422) throw ghError(p.status);
   }
   throw ghError(409);
+}
+const ghPublish=payload=>ghWrite(GH.path,'Publish lineup'+(payload.t?': '+payload.t:''),()=>payload);
+/* Game log (games.json): one record per game, saved with first names / nicknames only. Same date + game number replaces the earlier record. */
+function gameRecord(){
+  return {k:gDate()+'-'+gGame(),date:gDate(),g:gGame(),t:(state.note||'').trim(),tm:(state.gtime||'').trim(),fl:(state.gfield||'').trim(),
+    of:state.of,n:state.bat===0?0:12,pub:Date.now(),
+    b:inOrder().map(id=>[id,shortName(byId(id)),spotOf(id)?L(spotOf(id)):''])};
+}
+function logGame(rec){
+  return ghWrite('games.json','Game log: '+rec.date+' game '+rec.g,ex=>{
+    const games=(ex&&Array.isArray(ex.games)?ex.games:[]).filter(x=>x&&x.k!==rec.k).concat(rec);
+    games.sort((a,b)=>(a.date<b.date?-1:a.date>b.date?1:String(a.g).localeCompare(String(b.g))));
+    return {v:1,games};
+  });
 }
 const fmtTime=d=>new Date(d).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 function openShare(){
@@ -852,12 +884,16 @@ function openShare(){
     $('#panel').innerHTML=`
       <div class="sheet-head"><h3 id="sheetTitle">Publish lineup</h3><button class="btn" type="button" data-close>Done</button></div>
       <label class="fld"><span>Game note</span><input type="text" id="gNote" value="${esc(state.note||'')}" placeholder="Sun 9:00 AM vs. Bombers" autocomplete="off"><small>Optional. Shows at the top of the team's view.</small></label>
+      <div class="fld"><span>Game</span><div class="seg" id="gGame" role="group" aria-label="Which game">
+        ${[['1','Game 1'],['2','Game 2'],['x','Other'],['n',"Don't log"]].map(([v,t])=>`<button type="button" data-g="${v}" aria-pressed="${gGame()===v}">${t}</button>`).join('')}</div>
+        <small id="gGameHint"></small></div>
       <div class="two-col">
+        <label class="fld"><span>Game date</span><input type="date" id="gDate" value="${esc(gDate())}"></label>
         <label class="fld"><span>Time</span><input type="text" id="gTime" value="${esc(state.gtime||'')}" placeholder="8:20 &amp; 9:40" maxlength="60" autocomplete="off"></label>
-        <label class="fld"><span>Field</span><input type="text" id="gField" value="${esc(state.gfield||'')}" placeholder="Willowbrook" maxlength="60" autocomplete="off"></label>
       </div>
+      <label class="fld"><span>Field</span><input type="text" id="gField" value="${esc(state.gfield||'')}" placeholder="Willowbrook" maxlength="60" autocomplete="off"></label>
       <div id="fieldSug" class="sug" aria-live="polite"></div>
-      <button type="button" class="link" data-act="fields">Manage fields</button>
+      <span class="foot-btns"><button type="button" class="link" data-act="fields">Manage fields</button><button type="button" class="link" data-act="log">Game log</button></span>
       <div class="fld"><button class="btn primary big" type="button" id="pubBtn">Publish to team</button>
         <small id="pubStatus">Updates the lineup at the team link. Anyone with it open sees the change within about a minute.</small></div>
       <div class="fld"><span>Tell the chat</span><textarea class="msg" id="msgText" aria-label="Message for the team chat"></textarea>
@@ -874,6 +910,11 @@ function openShare(){
     refresh();
     note.oninput=()=>{state.note=note.value;save();refresh();};
     $('#gTime').oninput=e=>{state.gtime=e.target.value;save();refresh();};
+    const hint=$('#gGameHint');
+    const setHint=()=>{hint.textContent=gGame()==='n'?"Practice mode: publishes the lineup but doesn't save it to the game log.":'Saved to the game log when you publish. Publishing the same game again replaces it.';};
+    setHint();
+    $('#gGame').onclick=e=>{const b=e.target.closest('[data-g]');if(!b)return;state.ggame=b.dataset.g;save();document.querySelectorAll('#gGame [data-g]').forEach(x=>x.setAttribute('aria-pressed',x===b));setHint();refresh();};
+    $('#gDate').oninput=e=>{state.gdate=e.target.value;save();};
     const gf=$('#gField'), sug=$('#fieldSug');
     const showSug=()=>{
       const m=fieldMatches(gf.value);
@@ -898,8 +939,14 @@ function openShare(){
       try{
         await ghPublish(payload);
         store.set(KEY_LIVE,JSON.stringify(payload));
-        pub.textContent='Published'; st.className='ok-text';
-        st.textContent='Published at '+fmtTime(payload.d)+'. The team link updates within about a minute.';
+        let logMsg='';
+        if(gGame()!=='n'){
+          const rec=gameRecord();
+          try{await logGame(rec);logMsg=' Saved to the game log as '+(rec.g==='x'?'an other game':'game '+rec.g)+' on '+rec.date+'.';}
+          catch(le){logMsg=' The lineup is live, but the game log did not save: '+le+' Publish again to retry.';}
+        }
+        pub.textContent='Published'; st.className=logMsg.includes('did not save')?'err-text':'ok-text';
+        st.textContent='Published at '+fmtTime(payload.d)+'. The team link updates within about a minute.'+logMsg;
         toast('Published to the team');
         setTimeout(()=>{if(document.contains(pub)){pub.disabled=false;pub.textContent='Publish again';}},2500);
       }catch(err){
@@ -937,6 +984,33 @@ function openFields(){
     $('#fDone').onclick=()=>{closeSheet();openShare();};
   };
   showSheet('fields',build);
+}
+
+function openLog(){
+  const build=data=>{
+    const games=(data&&Array.isArray(data.games))?data.games:null;
+    let body;
+    if(data===undefined) body='<p class="meta">Loading the game log…</p>';
+    else if(!games) body='<p class="meta">No games logged yet. Publish a lineup with Game 1, Game 2 or Other selected and it will show up here.</p>';
+    else{
+      const P=new Map();
+      games.forEach(gm=>(gm.b||[]).forEach(e=>{const id=e[0];let r=P.get(id);if(!r){r={name:e[1],gp:0,field:0,bench:0,pos:{}};P.set(id,r);}r.name=e[1]||r.name;r.gp++;if(e[2]){r.field++;r.pos[e[2]]=(r.pos[e[2]]||0)+1;}else r.bench++;}));
+      const rows=[...P.values()].sort((a,b)=>b.gp-a.gp||a.name.localeCompare(b.name));
+      const gname=g=>g.g==='x'?'Other':'Game '+g.g;
+      const dfmt=d=>{const [y,m,dd]=String(d).split('-').map(Number);return y?new Date(y,m-1,dd).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'}):String(d);};
+      body=`<h2 class="log-h">Players <span class="ct">${rows.length}</span></h2>
+        <div class="log-tbl" role="table"><div class="log-row head" role="row"><span>Player</span><span title="Games in the lineup">GP</span><span title="Games with a spot on the field">Field</span><span title="Games on the bench">Bench</span></div>
+        ${rows.map(r=>`<div class="log-row" role="row"><span class="log-nm"><b>${esc(r.name)}</b><small>${Object.entries(r.pos).sort((a,b)=>b[1]-a[1]).map(([k,v])=>esc(k)+(v>1?' ×'+v:'')).join(' · ')||'—'}</small></span><span>${r.gp}</span><span>${r.field}</span><span>${r.bench}</span></div>`).join('')}</div>
+        <h2 class="log-h">Games <span class="ct">${games.length}</span></h2>
+        <ul class="log-games">${games.slice().reverse().map(g=>`<li><b>${esc(dfmt(g.date))} · ${gname(g)}</b><small>${esc([g.t,g.tm,g.fl].filter(Boolean).join(' · '))||'—'} · ${(g.b||[]).length} players</small></li>`).join('')}</ul>`;
+    }
+    $('#panel').innerHTML=`<div class="sheet-head"><h3 id="sheetTitle">Game log</h3><button class="btn" type="button" id="lDone">Done</button></div>${body}
+      <small class="meta">GP is games in the lineup. Field and Bench count whether the player had a spot on the field when the lineup was published. Innings aren't tracked yet.</small>`;
+    $('#lDone').onclick=()=>{closeSheet();openShare();};
+  };
+  showSheet('log',()=>{});
+  build(undefined);
+  fetch('games.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null).then(d=>{if(openSheet&&openSheet.kind==='log') build(d);});
 }
 
 /* ---------- backup / restore ---------- */
@@ -1036,7 +1110,7 @@ function renderTeam(Lu,mode){
   }[mode]||'';
   el.innerHTML=head('Lineup')+`
       ${Lu.t?`<p class="game-note">${esc(Lu.t)}</p>`:''}
-      ${(Lu.tm||Lu.fl)?`<dl class="game-info">${Lu.tm?`<div><dt>Time</dt><dd>${esc(Lu.tm)}</dd></div>`:''}${Lu.fl?(Lu.fu?`<a class="gi-link" href="${esc(Lu.fu)}" target="_blank" rel="noopener" aria-label="Field: ${esc(Lu.fl)}. Opens the map."><dt>Field</dt><dd>${esc(Lu.fl)}</dd><span class="gi-map">Tap for map ›</span></a>`:`<div><dt>Field</dt><dd>${esc(Lu.fl)}</dd></div>`):''}</dl>`:''}
+      ${(Lu.tm||Lu.fl||Lu.g)?`<dl class="game-info">${Lu.g?`<div><dt>Game</dt><dd>${Lu.g} of 2</dd></div>`:''}${Lu.tm?`<div><dt>Time</dt><dd>${esc(Lu.tm)}</dd></div>`:''}${Lu.fl?(Lu.fu?`<a class="gi-link" href="${esc(Lu.fu)}" target="_blank" rel="noopener" aria-label="Field: ${esc(Lu.fl)}. Opens the map."><dt>Field</dt><dd>${esc(Lu.fl)}</dd><span class="gi-map">Tap for map ›</span></a>`:`<div><dt>Field</dt><dd>${esc(Lu.fl)}</dd></div>`):''}</dl>`:''}
       <p class="meta">${Lu.d?'Posted '+esc(fmtWhen(Lu.d))+' · ':''}${Lu.b.length} players in today</p>${mode==='live'||mode==='saved'?status:''}</div></header>
     ${mode==='live'||mode==='saved'?'':status}
     <main class="grid">
