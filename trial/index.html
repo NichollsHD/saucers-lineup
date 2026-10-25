@@ -101,6 +101,8 @@ table.ls{border-collapse:collapse;width:100%;font:700 17px/1 var(--f-display);fo
 .base.on{background:var(--runner);border-color:var(--runner)}
 .blabel{position:absolute;transform:translate(-50%,0);font:700 13px/1.1 var(--f-display);letter-spacing:.04em;white-space:nowrap;color:var(--board-ink);background:var(--board-2);padding:3px 7px;border-radius:999px;pointer-events:none}
 .blabel.hint{color:var(--board-dim);background:transparent}
+button.plate{border:0;cursor:pointer;color:inherit;font:inherit}
+button.plate:focus-visible{outline:none;background:var(--runner)}
 .plate{position:absolute;left:50%;top:84%;width:78px;height:72px;transform:translate(-50%,-50%);background:var(--base);clip-path:polygon(0 0,100% 0,100% 55%,50% 100%,0 55%);display:grid;place-items:start center;padding-top:3px}
 .plate img{width:56px;height:56px;object-fit:contain}
 .dia-note{margin:0;text-align:center;font-size:13px;color:var(--board-dim)}
@@ -355,6 +357,7 @@ function runnerAction(i,act){
   else if(act==='back'){S.bases[i]=null;S.bases[i-1]=r;addPlay(nm(r)+' held at '+BASE[i-1]+'.');}
   else if(act==='score'||act==='scoreRbi'){S.bases[i]=null;const rb=act==='scoreRbi'?S.lastBatter:null;scoreRun(r,rb);(S.lastScored=S.lastScored||[]).push({r,rbi:r==='x'?null:rb});addPlay(nm(r)+' scored'+(rb&&rb!=='x'?' (RBI '+P(rb).name+')':'')+'.');}
   else if(act==='out'){S.bases[i]=null;addPlay(nm(r)+' out on the bases.');S.acts++;checkAfterRuns();addOut(1);return;}
+  else if(act==='thrown'){S.bases[i]=null;addPlay(nm(r)+' thrown out at '+(i===2?'home':BASE[i+1])+'.');S.acts++;addOut(1);return;}
   else if(act==='remove'){S.bases[i]=null;labelLast('Removed '+nm(r)+' from '+BASE[i]);}
   S.acts++;checkAfterRuns();
 }
@@ -366,12 +369,35 @@ function moveRunner(from,to){
 }
 function unScore(k,to){
   const e=(S.lastScored||[])[k];if(!e||S.bases[to]||(e.r!=='x'&&S.bases.includes(e.r)))return;
-  snap();const side=batSide();
+  snap();takeBack(k);S.bases[to]=e.r;S.acts++;
+  addPlay(nm(e.r)+' held at '+BASE[to]+'. Run taken back.');
+}
+function takeBack(k){
+  const e=S.lastScored[k], side=batSide();
   S.line[side][S.inn-1]=Math.max(0,(S.line[side][S.inn-1]||0)-1);
   if(e.r!=='x'&&S.stats[e.r]) S.stats[e.r].r=Math.max(0,S.stats[e.r].r-1);
   if(e.rbi&&e.rbi!=='x'&&S.stats[e.rbi]) S.stats[e.rbi].rbi=Math.max(0,S.stats[e.rbi].rbi-1);
-  S.lastScored.splice(k,1);S.bases[to]=e.r;S.acts++;
-  addPlay(nm(e.r)+' held at '+BASE[to]+'. Run taken back.');
+  S.lastScored.splice(k,1);return e;
+}
+function outAtHome(k){
+  const e=(S.lastScored||[])[k];if(!e)return;
+  snap();takeBack(k);S.acts++;
+  addPlay(nm(e.r)+' thrown out at home. Run taken back.');addOut(1);
+}
+function homeSheet(){
+  const lbl=t=>`<p class="sheet-lab">${t}</p>`, r3=S.bases[2];
+  const lb=S.lastBatter&&S.lastBatter!=='x'?P(S.lastBatter).name:null;
+  const on=new Set(S.bases.filter(Boolean));
+  const third=r3?lbl('Runner on 3rd')
+    +(lb&&r3!=='x'?`<button type="button" class="opt go" data-ra="scoreRbi" data-i="2">${esc(nm(r3))} scores <small>RBI to ${esc(lb)}</small></button>`:'')
+    +`<button type="button" class="opt go" data-ra="score" data-i="2">${esc(nm(r3))} scores${lb&&r3!=='x'?' <small>no RBI</small>':''}</button>`
+    +`<button type="button" class="opt bad" data-ra="thrown" data-i="2">${esc(nm(r3))} thrown out at home</button>`:'';
+  const last=(S.lastScored||[]).map((e,k)=>(e.r!=='x'&&on.has(e.r))?'':
+    `<button type="button" class="opt bad" data-oh="${k}">${esc(nm(e.r))} thrown out at home <small>run taken back, adds an out</small></button>`
+    +(S.bases[2]?'':`<button type="button" class="opt" data-un="${k}" data-i="2">${esc(nm(e.r))} held at 3rd <small>run taken back</small></button>`)).join('');
+  sheet(`<h3 id="sheetT">Home plate</h3>${third}${last?lbl('Scored on the last play')+last:''}
+    ${third||last?'':'<p class="foot">No runner on 3rd and nobody scored on the last play.</p>'}
+    <button type="button" class="opt" data-close>Cancel</button>`);
 }
 function finalize(){
   snap('Final');
@@ -432,9 +458,9 @@ function renderKeep(){
       <svg viewBox="0 0 100 86" aria-hidden="true"><path d="M50 74 L82 47 L50 14 L18 47 Z" fill="none" stroke="var(--board-line)" stroke-width="1.6"/></svg>
       ${dia.map((p,i)=>`<button type="button" class="base${S.bases[i]?' on':''}" data-base="${i}" style="left:${p[0]}%;top:${p[1]}%" aria-label="${BASE[i]} base: ${S.bases[i]?esc(nm(S.bases[i])):'empty'}" ${S.final||S.paused?'disabled':''}></button>
         <span class="blabel${S.bases[i]?'':' hint'}" style="left:${p[0]}%;top:calc(${p[1]}% + 30px)">${S.bases[i]?esc(nm(S.bases[i])):BASE[i]}</span>`).join('')}
-      <div class="plate" aria-hidden="true"><img src="logo.png" alt="" width="56" height="56"></div>
+      <button type="button" class="plate" data-plate="1" aria-label="Home plate: scoring and outs at home" ${S.final||S.paused?'disabled':''}><img src="logo.png" alt="" width="56" height="56"></button>
     </div>
-    <p class="dia-note">Tap a base to move, score or remove a runner.</p></div>`;
+    <p class="dia-note">Tap a base to move or put out a runner. Tap home plate for runs and outs at home.</p></div>`;
   if(S.alert){
     const d=lead(), lt=d>0?teamName('home'):teamName('away');
     const lose=d>0?teamName('away'):teamName('home');
@@ -524,7 +550,8 @@ function baseSheet(i){
       ${i>0&&!S.bases[i-1]?`<button type="button" class="opt" data-ra="back" data-i="${i}">Held at ${BASE[i-1]} (move back)</button>`:''}
       ${lb&&r!=='x'?`<button type="button" class="opt go" data-ra="scoreRbi" data-i="${i}">Scores · RBI to ${esc(lb)}</button>`:''}
       <button type="button" class="opt go" data-ra="score" data-i="${i}">Scores${lb&&r!=='x'?' · no RBI':''}</button>
-      <button type="button" class="opt bad" data-ra="out" data-i="${i}">Out on the bases</button>
+      <button type="button" class="opt bad" data-ra="thrown" data-i="${i}">Thrown out at ${i===2?'home':BASE[i+1]}</button>
+      <button type="button" class="opt bad" data-ra="out" data-i="${i}">Out on the bases <small>doubled off, picked off, passed by a runner</small></button>
       <button type="button" class="opt" data-ra="remove" data-i="${i}">Remove (wrong runner)</button>
       <button type="button" class="opt" data-close>Cancel</button>`);
   }else{
@@ -549,6 +576,8 @@ document.addEventListener('click',e=>{
   if(tab){const fan=tab.id==='tabFan';$('#tabKeep').setAttribute('aria-selected',!fan);$('#tabFan').setAttribute('aria-selected',fan);$('#colKeep').hidden=fan;$('#colFan').hidden=!fan;return;}
   if(t.closest('[data-close]')||t===$('#sheet')){closeSheet();return;}
   const ra=t.closest('[data-ra]');if(ra){closeSheet();runnerAction(+ra.dataset.i,ra.dataset.ra);render();return;}
+  const hp=t.closest('[data-plate]');if(hp){homeSheet();return;}
+  const oh=t.closest('[data-oh]');if(oh){closeSheet();outAtHome(+oh.dataset.oh);render();return;}
   const mv=t.closest('[data-mv]');if(mv){closeSheet();moveRunner(+mv.dataset.mv,+mv.dataset.i);render();return;}
   const un=t.closest('[data-un]');if(un){closeSheet();unScore(+un.dataset.un,+un.dataset.i);render();return;}
   const pl=t.closest('[data-place]');if(pl){closeSheet();placeRunner(+pl.dataset.i,pl.dataset.place);render();return;}

@@ -12,6 +12,20 @@ published from the app, not code changes. They aren't listed here.
 
 
 ---------------------------------------------------------------------
+v1.8.2  -  2026-10-24   (trial page only)
+---------------------------------------------------------------------
+ADDED (from tester feedback)
+- Home plate is tappable: one menu for everything at home. Runner on
+  3rd scores (with or without the RBI) or is thrown out at home; a
+  runner the app scored on the last play can be marked thrown out at
+  home (run and RBI taken back, out added) or held at 3rd.
+- Runner menus say what happened: "Thrown out at home / 3rd / 2nd",
+  plus "Out on the bases" for doubled off, picked off, etc.
+- These outs work for Saucers runners too (not just the opponent),
+  count toward the 3 outs, and show in the fans' play-by-play.
+
+
+---------------------------------------------------------------------
 v1.8.1  -  2026-10-24   (trial page only)
 ---------------------------------------------------------------------
 FIXED (from tester feedback)
