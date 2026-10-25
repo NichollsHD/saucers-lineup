@@ -4,11 +4,27 @@ Live app:  https://nichollshd.github.io/saucers-lineup/
 Repo:      https://github.com/NichollsHD/saucers-lineup
 
 Newest changes at the top. Each entry: version, date, what changed.
-When the app itself changes, also bump CACHE in sw.js (saucers-v9 -> v10...)
+When the app itself changes, also bump CACHE in sw.js (saucers-v10 -> v11...)
 so installed phones pick up the update.
 
 Note: "Publish lineup: ..." commits in the repo history are weekly lineups
 published from the app, not code changes. They aren't listed here.
+
+
+---------------------------------------------------------------------
+v1.8  -  2026-10-24   (sw.js cache: saucers-v10)
+---------------------------------------------------------------------
+ADDED
+- Scorekeeper trial: nichollshd.github.io/saucers-lineup/trial/
+  A stand-alone demo of the scorekeeper and the fans' Gameday view,
+  loaded with a sample game using the Oct 24 Game 2 lineup, to share
+  for feedback. Nothing in it touches the real lineup or game log.
+  Installable on its own ("Score Trial") with the Saucers logo icon.
+- Team logo saved in brand/ (original JPG + transparent PNG). Used on
+  home plate and in the header of the trial.
+FIXED
+- Opening another page on the site (like the trial) no longer replaces
+  the lineup app's saved offline copy. Each page is saved separately.
 
 
 ---------------------------------------------------------------------
@@ -225,7 +241,9 @@ V2 / V3: Scorekeeper and live Gameday (design agreed 2026-10-24)
   Actions workflow, about a minute behind, since plain Pages allows
   only ~10 rebuilds an hour). Move to a Cloudflare-style live service
   once it's a solid V2.
-- Mock-up built and shared (private claude.ai page).
+- Mock-up built (private claude.ai page), then shared as the v1.8 trial.
+  Approved: opponent buttons, auto runner moves, mercy / walk-off
+  prompts, named Undo. Open: keep Sac fly / FC / Error buttons?
 
 V2 / V3 additions
 - Formal name plus a nickname / alternate name for each player, so the

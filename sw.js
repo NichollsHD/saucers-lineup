@@ -1,6 +1,6 @@
 // Saucers Lineup service worker: keeps the app working offline at the field.
 // Bump CACHE when you publish a new version so phones pick up the update.
-const CACHE = 'saucers-v9';
+const CACHE = 'saucers-v10';
 const CORE = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png',
   './sponsors/stonebridge.png', './sponsors/skyline.jpg'];
@@ -28,13 +28,16 @@ self.addEventListener('fetch', e => {
     e.respondWith((async () => {
       const cache = await caches.open(CACHE);
       // cache:'no-cache' makes the browser check GitHub for a newer page instead of reusing its 10-minute copy.
-      const net = fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).then(res => { if (res.ok) cache.put('./index.html', res.clone()); return res; });
+      // The lineup app is saved as ./index.html; any other page (like /trial/) is saved under its own address.
+      const root = new URL(self.registration.scope).pathname;
+      const key = (url.pathname === root || url.pathname === root + 'index.html') ? './index.html' : url.pathname;
+      const net = fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).then(res => { if (res.ok) cache.put(key, res.clone()); return res; });
       net.catch(() => {});
       try {
         const res = await Promise.race([net, new Promise(r => setTimeout(r, 3500))]);
         if (res) return res;
       } catch (err) {}
-      const saved = await cache.match('./index.html');
+      const saved = await cache.match(key);
       return saved || net;
     })());
     return;

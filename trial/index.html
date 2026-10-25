@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Saucers Scorekeeper (Trial)</title>
+<meta name="description" content="Trial of the Sunday Saucers scorekeeper and live Gameday view, with a sample game">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef0eb">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121511">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Score Trial">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Saira+Condensed:wght@600;700;800&display=swap">
+<style>
+/* Layout: phone-first scorekeeper console (scoreboard, diamond, outcome pad) next to the fans' Gameday view. Tabs on phones, side by side on iPad and wider. Tokens match the Saucers Lineup app. */
+:root{
+  --paper:#eef0eb; --card:#fbfcf9; --ink:#1b1f18; --muted:#5d6459; --line:#d5d9cf;
+  --sauce:#c42a2f; --sauce-ink:#ffffff; --sauce-soft:#f8e1df;
+  --ok:#1f7a45; --ok-bg:#dff0e3; --warn:#9a6200; --warn-bg:#fbefd4;
+  --board:#1f3a1d; --board-2:#28472a; --board-ink:#f3f4ec; --board-dim:#a9b8a3; --board-line:#3c5a3a;
+  --base:#f3f4ec; --runner:#f2b705; --runner-ink:#1b1f18;
+  --f-display:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121511; --card:#1a1e18; --ink:#e7ebe2; --muted:#9aa395; --line:#2d3329;
+    --sauce:#e5484d; --sauce-ink:#ffffff; --sauce-soft:#3a1719;
+    --ok:#62cc88; --ok-bg:#16301f; --warn:#e8b14c; --warn-bg:#35290f;
+    --board:#10200f; --board-2:#183018; --board-ink:#eef0e6; --board-dim:#93a38e; --board-line:#2a4428;
+    --base:#e8eade; --runner:#f2b705; --runner-ink:#161a14;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121511; --card:#1a1e18; --ink:#e7ebe2; --muted:#9aa395; --line:#2d3329;
+  --sauce:#e5484d; --sauce-ink:#ffffff; --sauce-soft:#3a1719;
+  --ok:#62cc88; --ok-bg:#16301f; --warn:#e8b14c; --warn-bg:#35290f;
+  --board:#10200f; --board-2:#183018; --board-ink:#eef0e6; --board-dim:#93a38e; --board-line:#2a4428;
+  --base:#e8eade; --runner:#f2b705; --runner-ink:#161a14;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:500 16px/1.4 var(--f-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 40px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--sauce);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.eyebrow{margin:0;font:700 13px/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--sauce)}
+h1{margin:4px 0 0;font:800 clamp(30px,6vw,44px)/1 var(--f-display);letter-spacing:.01em;text-wrap:balance}
+.mock{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.mock p{margin:0;color:var(--muted);font-size:14px;max-width:62ch}
+.chip{display:inline-block;font:700 12px/1 var(--f-display);letter-spacing:.1em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:var(--warn-bg);color:var(--warn)}
+.tabs{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.tabs button{flex:1;border:0;background:transparent;min-height:44px;font:700 16px var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.cols{display:grid;grid-template-columns:1fr;gap:22px;align-items:start}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+#keep,#fan{display:flex;flex-direction:column;gap:12px;min-width:0}
+.col-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.col-h h2{margin:0;font:700 14px/1 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.col-h small{color:var(--muted);font-size:13px}
+@media (min-width:980px){.tabs{display:none}.cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.col[hidden]{display:flex!important}}
+
+/* Scoreboard (shared) */
+.board{background:var(--board);color:var(--board-ink);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ls-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.ls{border-collapse:collapse;width:100%;font:700 17px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.ls th,.ls td{text-align:center;padding:7px 4px;min-width:26px}
+.ls thead th{font-size:13px;color:var(--board-dim);letter-spacing:.06em}
+.ls th.team{text-align:left;min-width:92px;padding-left:4px;font-size:17px;letter-spacing:.04em;white-space:nowrap}
+.ls thead th.team{font-size:13px}
+.ls tbody tr+tr td,.ls tbody tr+tr th{border-top:1px solid var(--board-line)}
+.ls .tot{border-left:1px solid var(--board-line);color:var(--board-ink);min-width:32px}
+.ls .tot.r{font-size:20px}
+.ls td.now{background:var(--board-2);box-shadow:inset 0 0 0 2px var(--runner);border-radius:4px}
+.ls td.empty{color:var(--board-dim)}
+.ls .us{color:var(--runner)}
+
+.sit{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.inn{font:800 26px/1 var(--f-display);letter-spacing:.02em;white-space:nowrap}
+.inn small{display:block;font:700 11px/1.2 var(--f-display);letter-spacing:.12em;color:var(--board-dim);text-transform:uppercase}
+.outs{display:flex;gap:6px;align-items:center}
+.outs span{font:700 11px var(--f-display);letter-spacing:.12em;color:var(--board-dim);text-transform:uppercase;margin-right:2px}
+.outs i{width:14px;height:14px;border-radius:50%;border:2px solid var(--board-ink);display:block}
+.outs i.on{background:var(--board-ink)}
+.mini{width:56px;height:46px;position:relative}
+.mini b{position:absolute;width:15px;height:15px;transform:translate(-50%,-50%) rotate(45deg);border:2px solid var(--board-ink);border-radius:2px}
+.mini b.on{background:var(--runner);border-color:var(--runner)}
+.final-tag{font:800 22px/1 var(--f-display);letter-spacing:.08em;color:var(--runner)}
+
+/* Diamond (scorekeeper) */
+.dia{position:relative;width:min(100%,330px);aspect-ratio:1/0.86;max-width:100%;margin:2px auto 0}
+.dia svg{position:absolute;inset:0;width:100%;height:100%}
+.base{position:absolute;width:46px;height:46px;transform:translate(-50%,-50%) rotate(45deg);border-radius:6px;border:3px solid var(--base);background:transparent}
+.base.on{background:var(--runner);border-color:var(--runner)}
+.blabel{position:absolute;transform:translate(-50%,0);font:700 13px/1.1 var(--f-display);letter-spacing:.04em;white-space:nowrap;color:var(--board-ink);background:var(--board-2);padding:3px 7px;border-radius:999px;pointer-events:none}
+.blabel.hint{color:var(--board-dim);background:transparent}
+.plate{position:absolute;left:50%;top:84%;width:78px;height:72px;transform:translate(-50%,-50%);background:var(--base);clip-path:polygon(0 0,100% 0,100% 55%,50% 100%,0 55%);display:grid;place-items:start center;padding-top:3px}
+.plate img{width:56px;height:56px;object-fit:contain}
+.dia-note{margin:0;text-align:center;font-size:13px;color:var(--board-dim)}
+
+/* Batter + outcomes */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.batter{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.batter .lab{font:700 12px/1 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.batter .nm{font:800 26px/1.05 var(--f-display);letter-spacing:.01em}
+.batter .nm small{font:600 15px var(--f-body);color:var(--muted);margin-left:6px}
+.batter .deck{font-size:14px;color:var(--muted)}
+.link{border:0;background:none;padding:6px 2px;color:var(--sauce);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.pad{display:flex;flex-direction:column;gap:10px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.grp>span{font:700 12px/1 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px}
+.ob{min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--card);font:700 17px/1.05 var(--f-display);letter-spacing:.03em;padding:6px 4px}
+.ob small{display:block;font:600 11px var(--f-body);letter-spacing:0;color:var(--muted);margin-top:2px}
+.ob.hit{background:var(--ok-bg);border-color:transparent;color:var(--ok)}
+.ob.walk{background:var(--ok-bg);border-color:transparent;color:var(--ok)}
+.ob.out{background:var(--card)}
+.ob.oth{border-style:dashed}
+.ob.run{background:var(--sauce);border-color:var(--sauce);color:var(--sauce-ink)}
+.ob:active{transform:translateY(1px)}
+.ob:disabled{opacity:.45;cursor:not-allowed}
+.sugg{color:var(--muted);font-size:12px;font-weight:500;letter-spacing:0;text-transform:none}
+.picker{display:flex;flex-direction:column;gap:6px}
+.picker h3{margin:0 0 2px;font:800 20px/1.1 var(--f-display)}
+.pk{display:flex;align-items:center;gap:10px;width:100%;text-align:left;min-height:46px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper)}
+.pk b{font:700 17px var(--f-display);width:22px;color:var(--sauce);font-variant-numeric:tabular-nums}
+.pk span{font:600 16px var(--f-body);flex:1}
+.pk em{font:700 11px var(--f-display);letter-spacing:.1em;text-transform:uppercase;font-style:normal;color:var(--ok);background:var(--ok-bg);padding:4px 7px;border-radius:999px}
+.pk.next{border-color:var(--ok);border-width:2px}
+.bar{display:flex;flex-wrap:wrap;gap:8px}
+.btn{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);font:700 15px var(--f-display);letter-spacing:.05em;text-transform:uppercase}
+.btn.primary{background:var(--sauce);border-color:var(--sauce);color:var(--sauce-ink)}
+.btn.armed{background:var(--sauce);border-color:var(--sauce);color:var(--sauce-ink)}
+.undo{flex:1 1 100%;min-width:0;text-align:left;text-transform:none;letter-spacing:0;font:600 14px var(--f-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.alert{display:flex;flex-direction:column;gap:8px;background:var(--warn-bg);color:var(--ink);border-radius:14px;padding:12px;border:1px solid var(--warn)}
+.alert b{font:800 18px/1.15 var(--f-display);letter-spacing:.02em}
+.setup{display:flex;flex-direction:column;gap:10px}
+.setup label{display:flex;flex-direction:column;gap:6px;font:700 12px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.setup input{font:500 17px var(--f-body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--card);min-height:44px;font:700 15px var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* Gameday (team view) */
+.ab{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:end}
+.ab .lab{font:700 12px/1 var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ab .nm{font:800 28px/1.05 var(--f-display)}
+.ab .line{font:600 15px var(--f-body);color:var(--muted);text-align:right}
+.ab .deck{grid-column:1/-1;font-size:14px;color:var(--muted)}
+.last{border-left:4px solid var(--sauce);padding:6px 0 6px 12px;font:600 16px/1.35 var(--f-body)}
+.last small{display:block;font:700 12px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.pbp{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.pbp li{display:grid;grid-template-columns:46px 1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.pbp li:first-child{border-top:0}
+.pbp .hi{font:700 14px var(--f-display);letter-spacing:.04em;color:var(--muted)}
+.pbp .end{color:var(--muted);font-style:italic}
+.box-wrap{overflow-x:auto}
+table.box{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.box th,.box td{padding:7px 6px;text-align:center;font:600 15px var(--f-display)}
+.box th{font:700 12px var(--f-display);letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.box td:first-child,.box th:first-child{text-align:left;font:600 15px var(--f-body);white-space:nowrap}
+.box th:first-child{font:700 12px var(--f-display)}
+.box tbody tr{border-top:1px solid var(--line)}
+.box tr.cur td{color:var(--sauce)}
+details.card summary{cursor:pointer;font:700 14px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);list-style:none;display:flex;justify-content:space-between}
+details.card summary::-webkit-details-marker{display:none}
+details.card[open] summary{margin-bottom:8px}
+.foot{font-size:13px;color:var(--muted);margin:0}
+
+/* Sheet */
+.sheet{position:fixed;inset:0;background:rgba(10,12,9,.5);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:0 max(0px,env(safe-area-inset-right,0px)) 0 max(0px,env(safe-area-inset-left,0px))}
+.sheet .panel{background:var(--card);color:var(--ink);width:min(520px,100%);border-radius:18px 18px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;max-height:85vh;overflow:auto}
+.sheet h3{margin:0 0 4px;font:800 22px/1.1 var(--f-display)}
+.sheet .opt{min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--paper);text-align:left;padding:0 14px;font:600 16px var(--f-body)}
+.sheet .opt.go{background:var(--ok-bg);border-color:transparent;color:var(--ok);font-weight:700}
+.sheet .opt.bad{color:var(--sauce)}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font:600 15px var(--f-body);z-index:30;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.ob,.pk,.base{transition:transform .08s,background-color .15s}}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--paper)}
+[hidden]{display:none!important}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:64px;height:64px;flex:none;object-fit:contain}
+.try{margin:0;padding-left:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:2px}
+.thanks{margin:6px 0 0;font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mock">
+    <div class="brand">
+      <img src="logo.png" alt="Sunday Saucers logo" width="64" height="64">
+      <div><p class="eyebrow">Sunday Saucers</p><h1>Scorekeeper</h1></div>
+    </div>
+    <span class="chip">Trial · sample game</span>
+    <div>
+      <ul class="try">
+        <li>Tap a result (single, fly out, walk) and the batter, runners and score update.</li>
+        <li>Tap a base to move, score or remove a runner. Undo fixes any mistake.</li>
+        <li>Open Team view to see what players and fans would see.</li>
+      </ul>
+      <p class="thanks">Sample game with Saturday's lineup. Nothing here changes the real lineup app. Send your thoughts to Matt.</p>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button type="button" role="tab" id="tabKeep" aria-selected="true" aria-controls="colKeep">Scorekeeper</button>
+    <button type="button" role="tab" id="tabFan" aria-selected="false" aria-controls="colFan">Team view</button>
+  </div>
+
+  <div class="cols">
+    <section class="col" id="colKeep" role="tabpanel" aria-labelledby="tabKeep">
+      <div class="col-h"><h2>Scorekeeper</h2><small>Clipboard key only</small></div>
+      <div id="keep"></div>
+    </section>
+    <section class="col" id="colFan" role="tabpanel" aria-labelledby="tabFan" hidden>
+      <div class="col-h"><h2>Team view · Gameday</h2><small>What players and fans see</small></div>
+      <div id="fan"></div>
+    </section>
+  </div>
+</div>
+<div class="sheet" id="sheet" hidden><div class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="sheetT"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+/* Saturday Oct 24, Game 2 batting order (first names / nicknames, as in the game log). */
+const LINEUP=[
+  {id:'p1',name:'C Nicholls',pos:'LF'},{id:'p2',name:'M Nicholls',pos:'3B'},{id:'p3',name:'Tova',pos:'P'},
+  {id:'p6',name:'Lexy',pos:'2B'},{id:'p14',name:'Dr. Krecic',pos:'RF'},{id:'p10',name:'Daniel',pos:'1B'},
+  {id:'p8',name:'Phil',pos:'RCF'},{id:'p9',name:'Yadiel',pos:'DH'},{id:'p17',name:'Tommy',pos:'LCF'},
+  {id:'p12',name:'John',pos:'C'},{id:'psg',name:'Saige',pos:'SS'}
+];
+const US='Saucers';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const P=id=>LINEUP.find(p=>p.id===id);
+const ord=id=>LINEUP.findIndex(p=>p.id===id);
+const BASE=['1st','2nd','3rd'];
+const KIND={BB:'walked','1B':'singled','2B':'doubled','3B':'tripled',HR:'homered',FO:'flied out',LO:'lined out',GO:'grounded out',K:'struck out',SF:'hit a sacrifice fly',FC:"reached on a fielder's choice",E:'reached on an error'};
+
+/* ---------- game engine ---------- */
+let S, hist=[];
+function fresh(home,opp){
+  return {home,opp:opp||'Opponent',maxInn:7,line:{away:[],home:[]},hits:{away:0,home:0},inn:1,half:'top',outs:0,
+    bases:[null,null,null],next:0,cur:null,needPick:false,last:null,plays:[],stats:{},final:false,alert:null,paused:false,acts:0,dismissed:{}};
+}
+const usSide=()=>S.home?'home':'away';
+const batSide=()=>S.half==='top'?'away':'home';
+const usBat=()=>batSide()===usSide();
+const teamName=side=>side===usSide()?US:S.opp;
+const runs=side=>S.line[side].reduce((a,b)=>a+(b||0),0);
+const st=id=>S.stats[id]||(S.stats[id]={pa:0,ab:0,h:0,bb:0,r:0,rbi:0,k:0});
+const nm=r=>r==='x'?S.opp+' runner':P(r).name;
+const hl=()=>(S.half==='top'?'▲':'▼')+S.inn;
+function snap(label){hist.push({s:JSON.stringify(S),label:label||'last change'});if(hist.length>200)hist.shift();}
+const labelLast=t=>{if(hist.length)hist[hist.length-1].label=t;};
+function addPlay(text,cls){S.plays.push({hl:hl(),text,cls:cls||''});if(cls!=='end'){S.last=text;labelLast(text);}}
+
+function startHalf(){
+  S.outs=0;S.bases=[null,null,null];S.acts=0;
+  if(S.line[batSide()][S.inn-1]==null) S.line[batSide()][S.inn-1]=0;
+  if(usBat()){S.cur=null;S.needPick=true;}
+}
+function scoreRun(r,rbiTo){
+  S.line[batSide()][S.inn-1]=(S.line[batSide()][S.inn-1]||0)+1;
+  if(r!=='x') st(r).r++;
+  if(rbiTo&&rbiTo!=='x') st(rbiTo).rbi++;
+}
+function lead(){return runs('home')-runs('away');}
+function checkAfterRuns(){
+  // Walk-off in the last inning, or mercy reached mid-inning when the home team pulls 10+ ahead (the visitors already batted).
+  const ok=k=>!(S.dismissed&&S.dismissed[k]);
+  if(S.half==='bot'&&S.inn>=S.maxInn&&lead()>0&&ok('walkoff')) S.alert={kind:'walkoff'};
+  else if(S.half==='bot'&&S.inn>=4&&lead()>=10&&ok('mercy')) S.alert={kind:'mercy'};
+}
+function endHalf(){
+  const side=batSide(), r=S.line[side][S.inn-1]||0;
+  addPlay('Side retired. '+teamName(side)+' '+r+' run'+(r===1?'':'s')+' in the '+hl()+'.','end');
+  const d=lead();
+  if(S.half==='top'){
+    // Visitors just batted. Mercy if the home team leads by 10+ from the 4th on; game over if home leads going to the bottom of the last.
+    if(S.inn>=4&&d>=10&&!S.dismissed.mercy) S.alert={kind:'mercy'};
+    else if(S.inn>=S.maxInn&&d>0) S.alert={kind:'homeup'};
+    S.half='bot';startHalf();
+  }else{
+    // Home team just batted (the losing team always gets its last chance).
+    if(S.inn>=4&&Math.abs(d)>=10&&!S.dismissed.mercy) S.alert={kind:'mercy'};
+    if(S.inn>=S.maxInn){S.paused=true;S.alert={kind:d===0?'tied':'reg'};S.outs=0;S.bases=[null,null,null];return;}
+    S.inn++;S.half='top';startHalf();
+  }
+}
+function addOut(n){S.outs+=n||1;if(S.outs>=3) endHalf();}
+
+function apply(kind){
+  if(S.final||S.paused||(usBat()&&!S.cur)) return;
+  snap();
+  const b=usBat()?S.cur:'x', who=b==='x'?S.opp+' batter':P(b).name, scored=[];
+  let extra='';
+  const adv=n=>{for(let i=2;i>=0;i--){const r=S.bases[i];if(!r)continue;S.bases[i]=null;if(i+n>=3)scored.push(r);else S.bases[i+n]=r;}};
+  const force=()=>{if(S.bases[0]){if(S.bases[1]){if(S.bases[2])scored.push(S.bases[2]);S.bases[2]=S.bases[1];}S.bases[1]=S.bases[0];}S.bases[0]=b;};
+  let k=kind, out=0;
+  if(k==='SF'&&(S.outs>=2||!S.bases[2])) k='FO';
+  if(k==='BB') force();
+  else if(k==='1B'){adv(1);S.bases[0]=b;}
+  else if(k==='2B'){adv(2);S.bases[1]=b;}
+  else if(k==='3B'){adv(3);S.bases[2]=b;}
+  else if(k==='HR'){adv(3);scored.push(b);}
+  else if(k==='SF'){out=1;scored.push(S.bases[2]);S.bases[2]=null;}
+  else if(k==='FC'){out=1;if(S.bases[0]){extra=' '+nm(S.bases[0])+' out at 2nd.';}S.bases[0]=b;}
+  else if(k==='E') force();
+  else out=1;
+  if(b!=='x'){
+    const s=st(b);s.pa++;
+    if(k!=='BB'&&k!=='SF') s.ab++;
+    if(['1B','2B','3B','HR'].includes(k)) s.h++;
+    if(k==='BB') s.bb++;
+    if(k==='K') s.k++;
+  }
+  if(['1B','2B','3B','HR'].includes(k)) S.hits[batSide()]++;
+  const rbi=(k==='E'||k==='FC')?null:b;
+  scored.forEach(r=>scoreRun(r,rbi));
+  let text=who+' '+KIND[k]+'.'+extra;
+  if(scored.length){
+    const names=scored.filter(r=>r!=='x'&&r!==b).map(nm);
+    const opp=scored.filter(r=>r==='x').length;
+    if(names.length) text+=' '+names.join(' and ')+' scored.';
+    if(opp>0) text+=' '+opp+' run'+(opp>1?'s':'')+' scored.';
+  }
+  S.lastBatter=b;S.acts++;
+  addPlay(text);
+  if(b!=='x'){S.next=(ord(b)+1)%LINEUP.length;S.cur=LINEUP[S.next].id;}
+  checkAfterRuns();
+  if(out) addOut(out);
+}
+function quickRun(){ // opponent half: just add a run
+  if(S.final||S.paused) return;
+  snap();scoreRun('x',null);S.acts++;addPlay(S.opp+' scored a run.');checkAfterRuns();
+}
+function quickOut(){if(S.final||S.paused)return;snap();S.acts++;addPlay(S.opp+' batter out.');addOut(1);}
+function pickBatter(id){snap(P(id).name+' set as batter');S.cur=id;S.next=ord(id);S.needPick=false;}
+function runnerAction(i,act){
+  snap();const r=S.bases[i];
+  if(act==='adv'){S.bases[i]=null;if(i===2){scoreRun(r,null);addPlay(nm(r)+' scored.');}else{if(S.bases[i+1]){toast('Clear '+BASE[i+1]+' first');hist.pop();S.bases[i]=r;return;}S.bases[i+1]=r;addPlay(nm(r)+' moved to '+BASE[i+1]+'.');}}
+  else if(act==='score'||act==='scoreRbi'){S.bases[i]=null;const rb=act==='scoreRbi'?S.lastBatter:null;scoreRun(r,rb);addPlay(nm(r)+' scored'+(rb&&rb!=='x'?' (RBI '+P(rb).name+')':'')+'.');}
+  else if(act==='out'){S.bases[i]=null;addPlay(nm(r)+' out on the bases.');S.acts++;checkAfterRuns();addOut(1);return;}
+  else if(act==='remove'){S.bases[i]=null;labelLast('Removed '+nm(r)+' from '+BASE[i]);}
+  S.acts++;checkAfterRuns();
+}
+function placeRunner(i,r){snap(nm(r)+' put on '+BASE[i]);S.bases[i]=r;}
+function finalize(){
+  snap('Final');
+  if(S.acts===0&&!S.paused) S.line[batSide()][S.inn-1]=null; // half that never started shows as blank
+  S.final=true;S.alert=null;S.paused=false;S.bases=[null,null,null];S.outs=0;
+  const a=runs('away'),h=runs('home');
+  addPlay('Final: '+teamName('away')+' '+a+', '+teamName('home')+' '+h+'.','end');S.last=S.plays[S.plays.length-1].text;
+}
+function extraInning(){snap('Extra inning');S.maxInn++;S.paused=false;S.alert=null;S.inn++;S.half='top';startHalf();}
+
+/* ---------- sample game: played through the engine so the numbers are consistent ---------- */
+function sample(){
+  S=fresh(false,'Badabing');startHalf();
+  const play=list=>list.forEach(x=>{if(x==='run')quickRun();else if(x==='out')quickOut();else apply(x);});
+  pickBatter('p1');play(['1B','FO','2B','GO','K']);              // ▲1
+  play(['out','1B','out','out']);                                 // ▼1
+  pickBatter('p10');play(['HR','1B','BB','LO','GO','FO']);        // ▲2
+  play(['1B','HR','out','out','out']);                            // ▼2
+  pickBatter('p1');play(['BB','1B','3B','SF','K','GO']);          // ▲3
+  play(['out','BB','out','out']);                                 // ▼3
+  pickBatter('p8');play(['1B','FO']);                              // ▲4: Phil singles, Yadiel flies out. 1 out, Tommy up
+  hist=[];
+}
+
+/* ---------- rendering ---------- */
+function lsHTML(){
+  const n=Math.max(7,S.maxInn), cols=[...Array(n).keys()];
+  const cell=(side,i)=>{
+    const v=S.line[side][i], now=!S.final&&!S.paused&&batSide()===side&&S.inn-1===i;
+    if(v==null) return `<td class="empty">${S.final&&i<S.maxInn?'–':''}</td>`;
+    return `<td class="${now?'now':''}">${v}</td>`;
+  };
+  const row=side=>`<tr><th class="team${side===usSide()?' us':''}" scope="row">${esc(teamName(side))}</th>${cols.map(i=>cell(side,i)).join('')}<td class="tot r">${runs(side)}</td><td class="tot">${S.hits[side]}</td></tr>`;
+  return `<div class="ls-wrap"><table class="ls"><thead><tr><th class="team" scope="col">Inning</th>${cols.map(i=>`<th scope="col">${i+1}</th>`).join('')}<th class="tot" scope="col">R</th><th class="tot" scope="col">H</th></tr></thead><tbody>${row('away')}${row('home')}</tbody></table></div>`;
+}
+function outsHTML(){return `<div class="outs" aria-label="${S.outs} out${S.outs===1?'':'s'}"><span>Outs</span>${[0,1,2].map(i=>`<i class="${i<S.outs?'on':''}"></i>`).join('')}</div>`;}
+function miniHTML(){const pos=[[82,55],[50,20],[18,55]];return `<div class="mini" aria-label="Runners: ${S.bases.map((r,i)=>r?BASE[i]:null).filter(Boolean).join(', ')||'none'}">${pos.map((p,i)=>`<b class="${S.bases[i]?'on':''}" style="left:${p[0]}%;top:${p[1]}%"></b>`).join('')}</div>`;}
+function sitHTML(){
+  if(S.final) return `<div class="sit"><span class="final-tag">FINAL</span><span></span><span></span></div>`;
+  if(S.paused) return `<div class="sit"><div class="inn">End ${S.inn}<small>Waiting on the scorekeeper</small></div><span></span><span></span></div>`;
+  return `<div class="sit"><div class="inn">${hl()}<small>${esc(teamName(batSide()))} batting</small></div>${outsHTML()}${miniHTML()}</div>`;
+}
+const today=id=>{const s=S.stats[id];if(!s||!s.pa)return 'First at-bat today';const p=[s.h+'-for-'+s.ab];if(s.r)p.push(s.r+' R');if(s.rbi)p.push(s.rbi+' RBI');if(s.bb)p.push(s.bb+' BB');return p.join(' · ');};
+
+function renderKeep(){
+  const el=$('#keep');
+  if(S.setup){
+    el.innerHTML=`<div class="card setup"><h3 style="margin:0;font:800 22px var(--f-display)">New game</h3>
+      <div><label>We are</label><div class="seg" id="suSide"><button type="button" data-home="0" aria-pressed="${!S.setupHome}">Away · bat first</button><button type="button" data-home="1" aria-pressed="${!!S.setupHome}">Home · bat second</button></div></div>
+      <label for="suOpp">Opponent<input id="suOpp" type="text" value="${esc(S.setupOpp||'Badabing')}" autocomplete="off"></label>
+      <div class="bar"><button type="button" class="btn primary" id="suGo">Start game</button><button type="button" class="btn" id="suCancel">Cancel</button></div>
+      <button type="button" class="link" id="suSample">Or reload the sample game</button></div>`;
+    return;
+  }
+  const dia=[[82,55],[50,16],[18,55]];
+  let h=`<div class="board">${lsHTML()}${sitHTML()}
+    <div class="dia" aria-label="Bases. Tap a base to move, score or remove a runner.">
+      <svg viewBox="0 0 100 86" aria-hidden="true"><path d="M50 74 L82 47 L50 14 L18 47 Z" fill="none" stroke="var(--board-line)" stroke-width="1.6"/></svg>
+      ${dia.map((p,i)=>`<button type="button" class="base${S.bases[i]?' on':''}" data-base="${i}" style="left:${p[0]}%;top:${p[1]}%" aria-label="${BASE[i]} base: ${S.bases[i]?esc(nm(S.bases[i])):'empty'}" ${S.final||S.paused?'disabled':''}></button>
+        <span class="blabel${S.bases[i]?'':' hint'}" style="left:${p[0]}%;top:calc(${p[1]}% + 30px)">${S.bases[i]?esc(nm(S.bases[i])):BASE[i]}</span>`).join('')}
+      <div class="plate" aria-hidden="true"><img src="logo.png" alt="" width="56" height="56"></div>
+    </div>
+    <p class="dia-note">Tap a base to move, score or remove a runner.</p></div>`;
+  if(S.alert){
+    const d=lead(), lt=d>0?teamName('home'):teamName('away');
+    const lose=d>0?teamName('away'):teamName('home');
+    const msg={mercy:['Mercy rule',lt+' lead by '+Math.abs(d)+'. '+lose+' have had their last chance. End the game?'],
+      walkoff:['Walk-off',teamName('home')+' take the lead in the bottom of the '+S.inn+'.'],
+      homeup:['Game over?',teamName('home')+' lead after the top of the '+S.inn+', so the bottom half is not needed.'],
+      reg:['End of '+S.inn,(d>0?teamName('home'):teamName('away'))+' win '+Math.max(runs('home'),runs('away'))+'–'+Math.min(runs('home'),runs('away'))+'.'],
+      tied:['Tied after '+S.inn,'Play an extra inning or end it as a tie.']}[S.alert.kind];
+    h+=`<div class="alert" role="alert"><b>${esc(msg[0])}</b><span>${esc(msg[1])}</span><div class="bar">
+      <button type="button" class="btn primary" data-act="final">Final</button>
+      ${S.alert.kind==='tied'||S.alert.kind==='reg'?'<button type="button" class="btn" data-act="extra">Extra inning</button>':''}
+      ${S.alert.kind==='tied'||S.alert.kind==='reg'?'':'<button type="button" class="btn" data-act="dismiss">Keep playing</button>'}</div></div>`;
+  }
+  if(S.final){
+    h+=`<div class="card"><b style="font:800 22px var(--f-display)">Game over</b><p class="foot">In the full version this saves to the game log and adds to everyone's season stats.</p></div>`;
+  }else if(!S.paused){
+    if(usBat()&&S.needPick){
+      h+=`<div class="card picker"><h3>Who's leading off the ${hl()}?</h3>${LINEUP.map((p,i)=>`<button type="button" class="pk${i===S.next?' next':''}" data-pick="${p.id}"><b>${i+1}</b><span>${esc(p.name)}</span>${i===S.next?'<em>Up next</em>':''}</button>`).join('')}</div>`;
+    }else{
+      if(usBat()){
+        const nx=LINEUP[(S.next+1)%LINEUP.length];
+        h+=`<div class="card batter"><div><div class="lab">At bat · #${S.next+1}</div><div class="nm">${esc(P(S.cur).name)}<small>${esc(today(S.cur))}</small></div><div class="deck">On deck: ${esc(nx.name)}</div></div><button type="button" class="link" data-act="change">Change batter</button></div>`;
+      }else{
+        h+=`<div class="card batter"><div><div class="lab">${esc(S.opp)} batting</div><div class="nm">No names needed</div><div class="deck">Tap the result, or just add runs and outs.</div></div></div>`;
+      }
+      h+=`<div class="pad">
+        <div class="grp"><span>On base</span><div class="btns">
+          <button type="button" class="ob walk" data-k="BB">Walk</button>
+          <button type="button" class="ob hit" data-k="1B">1B<small>Single</small></button>
+          <button type="button" class="ob hit" data-k="2B">2B<small>Double</small></button>
+          <button type="button" class="ob hit" data-k="3B">3B<small>Triple</small></button>
+          <button type="button" class="ob hit" data-k="HR">HR<small>Home run</small></button></div></div>
+        <div class="grp"><span>Out</span><div class="btns">
+          <button type="button" class="ob out" data-k="FO">Fly out</button>
+          <button type="button" class="ob out" data-k="LO">Line out</button>
+          <button type="button" class="ob out" data-k="GO">Ground out</button>
+          <button type="button" class="ob out" data-k="K">Strikeout</button></div></div>
+        <div class="grp"><span>Other <span class="sugg">(suggested additions)</span></span><div class="btns">
+          <button type="button" class="ob oth" data-k="SF">Sac fly</button>
+          <button type="button" class="ob oth" data-k="FC">Fielder's choice</button>
+          <button type="button" class="ob oth" data-k="E">Error</button></div></div>
+        ${usBat()?'':`<div class="grp"><span>Quick</span><div class="btns"><button type="button" class="ob run" data-act="qrun">+1 Run</button><button type="button" class="ob out" data-act="qout">+1 Out</button></div></div>`}
+      </div>`;
+    }
+  }
+  h+=`<div class="bar"><button type="button" class="btn undo" data-act="undo" ${hist.length?'':'disabled'}>${hist.length?'Undo: '+esc(hist[hist.length-1].label):'Nothing to undo'}</button>
+    ${S.final?'':`<button type="button" class="btn" data-act="final2" id="finBtn">Final</button>`}
+    ${S.final||S.paused?'':`<button type="button" class="btn" data-act="extra2">+ Inning</button>`}
+    <button type="button" class="btn" data-act="new">New game</button></div>
+    <details class="card"><summary><span>Saucers stats this game</span><span>▾</span></summary>${boxHTML()}</details>`;
+  el.innerHTML=h;
+}
+function boxHTML(){
+  const rows=LINEUP.map(p=>{const s=S.stats[p.id]||{ab:0,h:0,r:0,rbi:0,bb:0,k:0};return `<tr class="${S.cur===p.id&&usBat()&&!S.final?'cur':''}"><td>${esc(p.name)}</td><td>${s.ab}</td><td>${s.h}</td><td>${s.r}</td><td>${s.rbi}</td><td>${s.bb}</td><td>${s.k}</td></tr>`;}).join('');
+  const t=LINEUP.reduce((a,p)=>{const s=S.stats[p.id]||{};['ab','h','r','rbi','bb','k'].forEach(k=>a[k]+=s[k]||0);return a;},{ab:0,h:0,r:0,rbi:0,bb:0,k:0});
+  return `<div class="box-wrap"><table class="box"><thead><tr><th scope="col">Batter</th><th scope="col">AB</th><th scope="col">H</th><th scope="col">R</th><th scope="col">RBI</th><th scope="col">BB</th><th scope="col">K</th></tr></thead><tbody>${rows}<tr><td><b>Team</b></td><td>${t.ab}</td><td>${t.h}</td><td>${t.r}</td><td>${t.rbi}</td><td>${t.bb}</td><td>${t.k}</td></tr></tbody></table></div>`;
+}
+function renderFan(){
+  const el=$('#fan');
+  if(S.setup){el.innerHTML='<div class="card"><p class="foot">The team view shows the scoreboard once the game starts.</p></div>';return;}
+  let ab='';
+  if(S.final) ab=`<div class="card"><div class="ab"><div><div class="lab">Final</div><div class="nm">${esc(teamName('away'))} ${runs('away')}, ${esc(teamName('home'))} ${runs('home')}</div></div></div></div>`;
+  else if(S.paused) ab=`<div class="card"><div class="ab"><div><div class="lab">End of ${S.inn}</div><div class="nm">Stand by</div></div></div></div>`;
+  else if(usBat()&&S.cur&&!S.needPick){const nx=LINEUP[(S.next+1)%LINEUP.length];ab=`<div class="card"><div class="ab"><div><div class="lab">At bat</div><div class="nm">${esc(P(S.cur).name)}</div></div><div class="line">${esc(today(S.cur))}</div><div class="deck">On deck: ${esc(nx.name)}</div></div></div>`;}
+  else if(usBat()) ab=`<div class="card"><div class="ab"><div><div class="lab">${esc(US)} batting</div><div class="nm">Batter coming up</div></div></div></div>`;
+  else ab=`<div class="card"><div class="ab"><div><div class="lab">${esc(S.opp)} batting</div><div class="nm">${S.outs} out${S.outs===1?'':'s'}${S.bases.some(Boolean)?', runners on':''}</div></div></div></div>`;
+  const plays=S.plays.slice().reverse();
+  el.innerHTML=`<div class="board">${lsHTML()}${sitHTML()}</div>${ab}
+    ${S.last?`<div class="last"><small>Last play</small>${esc(S.last)}</div>`:''}
+    <div class="card"><div class="col-h" style="margin-bottom:6px"><h2>Play by play</h2><small>${plays.length} plays</small></div>
+      <ul class="pbp">${plays.slice(0,14).map(p=>`<li class="${p.cls}"><span class="hi">${esc(p.hl)}</span><span>${esc(p.text)}</span></li>`).join('')}</ul></div>
+    <div class="card"><div class="col-h" style="margin-bottom:4px"><h2>${esc(US)} box score</h2></div>${boxHTML()}</div>
+    <p class="foot">In the full version this page updates on its own during the game, about a minute behind the field at first.</p>`;
+}
+function render(){renderKeep();renderFan();try{localStorage.setItem('saucers-score-trial',JSON.stringify({S,hist}));}catch(e){}}
+
+/* ---------- sheets / toast ---------- */
+function sheet(html){$('#panel').innerHTML=html;$('#sheet').hidden=false;const f=$('#panel button');f&&f.focus();}
+function closeSheet(){$('#sheet').hidden=true;$('#panel').innerHTML='';}
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200);}
+function baseSheet(i){
+  const r=S.bases[i];
+  if(r){
+    const lb=S.lastBatter&&S.lastBatter!=='x'?P(S.lastBatter).name:null;
+    sheet(`<h3 id="sheetT">${esc(nm(r))} on ${BASE[i]}</h3>
+      ${i<2?`<button type="button" class="opt" data-ra="adv" data-i="${i}">Move to ${BASE[i+1]}</button>`:''}
+      ${lb&&r!=='x'?`<button type="button" class="opt go" data-ra="scoreRbi" data-i="${i}">Scores · RBI to ${esc(lb)}</button>`:''}
+      <button type="button" class="opt go" data-ra="score" data-i="${i}">Scores${lb&&r!=='x'?' · no RBI':''}</button>
+      <button type="button" class="opt bad" data-ra="out" data-i="${i}">Out on the bases</button>
+      <button type="button" class="opt" data-ra="remove" data-i="${i}">Remove (wrong runner)</button>
+      <button type="button" class="opt" data-close>Cancel</button>`);
+  }else{
+    const on=new Set(S.bases.filter(Boolean));
+    const opts=usBat()?LINEUP.filter(p=>!on.has(p.id)).map(p=>`<button type="button" class="opt" data-place="${p.id}" data-i="${i}">${esc(p.name)}</button>`).join('')
+      :`<button type="button" class="opt" data-place="x" data-i="${i}">${esc(S.opp)} runner</button>`;
+    sheet(`<h3 id="sheetT">Put a runner on ${BASE[i]}</h3>${opts}<button type="button" class="opt" data-close>Cancel</button>`);
+  }
+}
+
+/* ---------- events ---------- */
+let finArmed=false,finT;
+document.addEventListener('click',e=>{
+  const t=e.target;
+  const tab=t.closest('[role=tab]');
+  if(tab){const fan=tab.id==='tabFan';$('#tabKeep').setAttribute('aria-selected',!fan);$('#tabFan').setAttribute('aria-selected',fan);$('#colKeep').hidden=fan;$('#colFan').hidden=!fan;return;}
+  if(t.closest('[data-close]')||t===$('#sheet')){closeSheet();return;}
+  const ra=t.closest('[data-ra]');if(ra){closeSheet();runnerAction(+ra.dataset.i,ra.dataset.ra);render();return;}
+  const pl=t.closest('[data-place]');if(pl){closeSheet();placeRunner(+pl.dataset.i,pl.dataset.place);render();return;}
+  const bs=t.closest('[data-base]');if(bs){baseSheet(+bs.dataset.base);return;}
+  const pk=t.closest('[data-pick]');if(pk){pickBatter(pk.dataset.pick);closeSheet();render();return;}
+  const ob=t.closest('[data-k]');if(ob){apply(ob.dataset.k);render();if(S.last)toast(S.last);return;}
+  const sd=t.closest('[data-home]');if(sd){S.setupHome=sd.dataset.home==='1';renderKeep();return;}
+  if(t.id==='suGo'){const opp=($('#suOpp').value||'Opponent').trim();const home=!!S.setupHome;hist=[];S=fresh(home,opp);startHalf();render();return;}
+  if(t.id==='suCancel'){delete S.setup;render();return;}
+  if(t.id==='suSample'){sample();render();return;}
+  const a=t.closest('[data-act]');if(!a)return;const k=a.dataset.act;
+  if(k==='undo'){if(hist.length){const h=hist.pop();S=JSON.parse(h.s);render();toast('Undone: '+h.label);}}
+  else if(k==='final'){finalize();render();}
+  else if(k==='final2'){if(!finArmed){finArmed=true;a.textContent='Tap again to end';a.classList.add('armed');clearTimeout(finT);finT=setTimeout(()=>{finArmed=false;render();},3000);return}finArmed=false;finalize();render();}
+  else if(k==='extra'){extraInning();render();}
+  else if(k==='extra2'){snap('Added inning');S.maxInn++;render();toast('Added inning '+S.maxInn);}
+  else if(k==='dismiss'){snap('Keep playing');S.dismissed[S.alert.kind]=true;S.alert=null;render();}
+  else if(k==='qrun'){quickRun();render();}
+  else if(k==='qout'){quickOut();render();}
+  else if(k==='change'){sheet(`<h3 id="sheetT">Who's batting?</h3>${LINEUP.map((p,i)=>`<button type="button" class="opt${p.id===S.cur?' go':''}" data-pick="${p.id}">${i+1}. ${esc(p.name)}</button>`).join('')}<button type="button" class="opt" data-close>Cancel</button>`);}
+  else if(k==='new'){S.setup=true;S.setupHome=false;S.setupOpp=S.opp;renderKeep();renderFan();}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet();});
+
+/* boot: restore this viewer's demo game if there is one, else the sample */
+try{const saved=JSON.parse(localStorage.getItem('saucers-score-trial')||'null');if(saved&&saved.S&&saved.S.line){S=saved.S;hist=(saved.hist||[]).filter(h=>h&&h.s);delete S.setup;if(!S.dismissed)S.dismissed={};}}catch(e){}
+if(!S) sample();
+render();
+window.__trial={get S(){return S},apply,quickRun,quickOut,pickBatter,runnerAction,finalize,extraInning,sample:()=>{sample();render();},render};
+})();
+</script>
+</body>
+</html>
