@@ -16,6 +16,7 @@ v1.8  -  2026-10-24   (sw.js cache: saucers-v10)
 ---------------------------------------------------------------------
 ADDED
 - Scorekeeper trial: nichollshd.github.io/saucers-lineup/trial/
+  (Sac fly / Fielder's choice / Error buttons confirmed 2026-10-24.)
   A stand-alone demo of the scorekeeper and the fans' Gameday view,
   loaded with a sample game using the Oct 24 Game 2 lineup, to share
   for feedback. Nothing in it touches the real lineup or game log.
@@ -226,7 +227,7 @@ V2 / V3: Scorekeeper and live Gameday (design agreed 2026-10-24)
 - Saucers at bat: scorekeeper picks the leadoff hitter each inning,
   then taps the result: Walk, 1B, 2B, 3B, HR, Fly / Line / Ground out,
   Strikeout. It moves to the next batter and tracks AB, H, R, RBI,
-  BB, K. Suggested extras: Sac fly, Fielder's choice, Error.
+  BB, K. Also: Sac fly, Fielder's choice, Error (approved).
 - Opponent at bat: same result buttons with no names, plus +1 Run and
   +1 Out. Third out flips the half-inning and fills in a 0.
 - "We are Home / Away" picked per game.
@@ -243,7 +244,7 @@ V2 / V3: Scorekeeper and live Gameday (design agreed 2026-10-24)
   once it's a solid V2.
 - Mock-up built (private claude.ai page), then shared as the v1.8 trial.
   Approved: opponent buttons, auto runner moves, mercy / walk-off
-  prompts, named Undo. Open: keep Sac fly / FC / Error buttons?
+  prompts, named Undo, and keeping the Sac fly / FC / Error buttons.
 
 V2 / V3 additions
 - Formal name plus a nickname / alternate name for each player, so the
