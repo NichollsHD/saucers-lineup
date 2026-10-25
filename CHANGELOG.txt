@@ -12,6 +12,21 @@ published from the app, not code changes. They aren't listed here.
 
 
 ---------------------------------------------------------------------
+v1.8.1  -  2026-10-24   (trial page only)
+---------------------------------------------------------------------
+FIXED (from tester feedback)
+- A runner the app moved too far can be held: tap the base he should
+  be on and pick "Move Tommy here", or tap his base and pick "Held at
+  2nd". Before, runners already on base weren't in the list.
+- A runner the app scored on a hit can be put back: tap the base and
+  pick "Tommy didn't score". The run, his R and the batter's RBI are
+  taken back.
+- Runners still move on their own by default; these are quick fixes
+  for the exceptions. Every fix shows in the play-by-play and can be
+  undone.
+
+
+---------------------------------------------------------------------
 v1.8  -  2026-10-24   (sw.js cache: saucers-v10)
 ---------------------------------------------------------------------
 ADDED

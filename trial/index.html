@@ -181,6 +181,9 @@ details.card[open] summary{margin-bottom:8px}
 .sheet .opt{min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--paper);text-align:left;padding:0 14px;font:600 16px var(--f-body)}
 .sheet .opt.go{background:var(--ok-bg);border-color:transparent;color:var(--ok);font-weight:700}
 .sheet .opt.bad{color:var(--sauce)}
+.sheet .opt small{display:block;font:500 13px var(--f-body);color:var(--muted)}
+.sheet .opt{padding-block:8px}
+.sheet-lab{margin:6px 0 0;font:700 12px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font:600 15px var(--f-body);z-index:30;max-width:calc(100% - 32px)}
 @media (prefers-reduced-motion:no-preference){.ob,.pk,.base{transition:transform .08s,background-color .15s}}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--paper)}
@@ -264,7 +267,7 @@ const labelLast=t=>{if(hist.length)hist[hist.length-1].label=t;};
 function addPlay(text,cls){S.plays.push({hl:hl(),text,cls:cls||''});if(cls!=='end'){S.last=text;labelLast(text);}}
 
 function startHalf(){
-  S.outs=0;S.bases=[null,null,null];S.acts=0;
+  S.outs=0;S.bases=[null,null,null];S.acts=0;S.lastScored=[];
   if(S.line[batSide()][S.inn-1]==null) S.line[batSide()][S.inn-1]=0;
   if(usBat()){S.cur=null;S.needPick=true;}
 }
@@ -326,6 +329,7 @@ function apply(kind){
   if(['1B','2B','3B','HR'].includes(k)) S.hits[batSide()]++;
   const rbi=(k==='E'||k==='FC')?null:b;
   scored.forEach(r=>scoreRun(r,rbi));
+  S.lastScored=scored.filter(r=>!(r===b&&k==='HR')).map(r=>({r,rbi:r==='x'?null:rbi}));
   let text=who+' '+KIND[k]+'.'+extra;
   if(scored.length){
     const names=scored.filter(r=>r!=='x'&&r!==b).map(nm);
@@ -348,12 +352,27 @@ function pickBatter(id){snap(P(id).name+' set as batter');S.cur=id;S.next=ord(id
 function runnerAction(i,act){
   snap();const r=S.bases[i];
   if(act==='adv'){S.bases[i]=null;if(i===2){scoreRun(r,null);addPlay(nm(r)+' scored.');}else{if(S.bases[i+1]){toast('Clear '+BASE[i+1]+' first');hist.pop();S.bases[i]=r;return;}S.bases[i+1]=r;addPlay(nm(r)+' moved to '+BASE[i+1]+'.');}}
-  else if(act==='score'||act==='scoreRbi'){S.bases[i]=null;const rb=act==='scoreRbi'?S.lastBatter:null;scoreRun(r,rb);addPlay(nm(r)+' scored'+(rb&&rb!=='x'?' (RBI '+P(rb).name+')':'')+'.');}
+  else if(act==='back'){S.bases[i]=null;S.bases[i-1]=r;addPlay(nm(r)+' held at '+BASE[i-1]+'.');}
+  else if(act==='score'||act==='scoreRbi'){S.bases[i]=null;const rb=act==='scoreRbi'?S.lastBatter:null;scoreRun(r,rb);(S.lastScored=S.lastScored||[]).push({r,rbi:r==='x'?null:rb});addPlay(nm(r)+' scored'+(rb&&rb!=='x'?' (RBI '+P(rb).name+')':'')+'.');}
   else if(act==='out'){S.bases[i]=null;addPlay(nm(r)+' out on the bases.');S.acts++;checkAfterRuns();addOut(1);return;}
   else if(act==='remove'){S.bases[i]=null;labelLast('Removed '+nm(r)+' from '+BASE[i]);}
   S.acts++;checkAfterRuns();
 }
 function placeRunner(i,r){snap(nm(r)+' put on '+BASE[i]);S.bases[i]=r;}
+function moveRunner(from,to){
+  const r=S.bases[from];if(!r||S.bases[to])return;
+  snap();S.bases[from]=null;S.bases[to]=r;S.acts++;
+  addPlay(nm(r)+(to<from?' held at ':' moved to ')+BASE[to]+'.');
+}
+function unScore(k,to){
+  const e=(S.lastScored||[])[k];if(!e||S.bases[to]||(e.r!=='x'&&S.bases.includes(e.r)))return;
+  snap();const side=batSide();
+  S.line[side][S.inn-1]=Math.max(0,(S.line[side][S.inn-1]||0)-1);
+  if(e.r!=='x'&&S.stats[e.r]) S.stats[e.r].r=Math.max(0,S.stats[e.r].r-1);
+  if(e.rbi&&e.rbi!=='x'&&S.stats[e.rbi]) S.stats[e.rbi].rbi=Math.max(0,S.stats[e.rbi].rbi-1);
+  S.lastScored.splice(k,1);S.bases[to]=e.r;S.acts++;
+  addPlay(nm(e.r)+' held at '+BASE[to]+'. Run taken back.');
+}
 function finalize(){
   snap('Final');
   if(S.acts===0&&!S.paused) S.line[batSide()][S.inn-1]=null; // half that never started shows as blank
@@ -502,6 +521,7 @@ function baseSheet(i){
     const lb=S.lastBatter&&S.lastBatter!=='x'?P(S.lastBatter).name:null;
     sheet(`<h3 id="sheetT">${esc(nm(r))} on ${BASE[i]}</h3>
       ${i<2?`<button type="button" class="opt" data-ra="adv" data-i="${i}">Move to ${BASE[i+1]}</button>`:''}
+      ${i>0&&!S.bases[i-1]?`<button type="button" class="opt" data-ra="back" data-i="${i}">Held at ${BASE[i-1]} (move back)</button>`:''}
       ${lb&&r!=='x'?`<button type="button" class="opt go" data-ra="scoreRbi" data-i="${i}">Scores · RBI to ${esc(lb)}</button>`:''}
       <button type="button" class="opt go" data-ra="score" data-i="${i}">Scores${lb&&r!=='x'?' · no RBI':''}</button>
       <button type="button" class="opt bad" data-ra="out" data-i="${i}">Out on the bases</button>
@@ -509,9 +529,15 @@ function baseSheet(i){
       <button type="button" class="opt" data-close>Cancel</button>`);
   }else{
     const on=new Set(S.bases.filter(Boolean));
-    const opts=usBat()?LINEUP.filter(p=>!on.has(p.id)).map(p=>`<button type="button" class="opt" data-place="${p.id}" data-i="${i}">${esc(p.name)}</button>`).join('')
+    const lbl=t=>`<p class="sheet-lab">${t}</p>`;
+    const movers=S.bases.map((r,j)=>r&&j!==i?`<button type="button" class="opt go" data-mv="${j}" data-i="${i}">Move ${esc(nm(r))} here <small>now on ${BASE[j]}</small></button>`:'').join('');
+    const backs=(S.lastScored||[]).map((e,k)=>(e.r!=='x'&&on.has(e.r))?'':`<button type="button" class="opt" data-un="${k}" data-i="${i}">${esc(nm(e.r))} didn't score <small>put back on ${BASE[i]}, run taken back</small></button>`).join('');
+    const fresh=usBat()?LINEUP.filter(p=>!on.has(p.id)).map(p=>`<button type="button" class="opt" data-place="${p.id}" data-i="${i}">${esc(p.name)}</button>`).join('')
       :`<button type="button" class="opt" data-place="x" data-i="${i}">${esc(S.opp)} runner</button>`;
-    sheet(`<h3 id="sheetT">Put a runner on ${BASE[i]}</h3>${opts}<button type="button" class="opt" data-close>Cancel</button>`);
+    sheet(`<h3 id="sheetT">Runner on ${BASE[i]}</h3>
+      ${movers?lbl('Runners already on base')+movers:''}
+      ${backs?lbl('Back from home (last play)')+backs:''}
+      ${lbl(usBat()?'Someone else':'New runner')}${fresh}<button type="button" class="opt" data-close>Cancel</button>`);
   }
 }
 
@@ -523,6 +549,8 @@ document.addEventListener('click',e=>{
   if(tab){const fan=tab.id==='tabFan';$('#tabKeep').setAttribute('aria-selected',!fan);$('#tabFan').setAttribute('aria-selected',fan);$('#colKeep').hidden=fan;$('#colFan').hidden=!fan;return;}
   if(t.closest('[data-close]')||t===$('#sheet')){closeSheet();return;}
   const ra=t.closest('[data-ra]');if(ra){closeSheet();runnerAction(+ra.dataset.i,ra.dataset.ra);render();return;}
+  const mv=t.closest('[data-mv]');if(mv){closeSheet();moveRunner(+mv.dataset.mv,+mv.dataset.i);render();return;}
+  const un=t.closest('[data-un]');if(un){closeSheet();unScore(+un.dataset.un,+un.dataset.i);render();return;}
   const pl=t.closest('[data-place]');if(pl){closeSheet();placeRunner(+pl.dataset.i,pl.dataset.place);render();return;}
   const bs=t.closest('[data-base]');if(bs){baseSheet(+bs.dataset.base);return;}
   const pk=t.closest('[data-pick]');if(pk){pickBatter(pk.dataset.pick);closeSheet();render();return;}
