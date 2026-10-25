@@ -12,6 +12,20 @@ published from the app, not code changes. They aren't listed here.
 
 
 ---------------------------------------------------------------------
+v1.8.3  -  2026-10-24   (trial page only)
+---------------------------------------------------------------------
+ADDED (from tester feedback)
+- "Check the runners" card after any hit, walk or error that moves
+  runners. Each runner the app moved gets one-tap fixes: "Held at 3rd"
+  (run and RBI taken back) or "Out at home / 3rd / 2nd".
+- It only offers what's possible: with runners on 2nd and 3rd, holding
+  the runner at 3rd also sends the other runner back to 2nd; with the
+  bases loaded nobody can hold, so no Held buttons show.
+- "Looks right" hides it; it also goes away on the next play. Undo
+  brings it back along with the play.
+
+
+---------------------------------------------------------------------
 v1.8.2  -  2026-10-24   (trial page only)
 ---------------------------------------------------------------------
 ADDED (from tester feedback)

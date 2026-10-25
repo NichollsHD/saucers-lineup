@@ -185,6 +185,12 @@ details.card[open] summary{margin-bottom:8px}
 .sheet .opt.bad{color:var(--sauce)}
 .sheet .opt small{display:block;font:500 13px var(--f-body);color:var(--muted)}
 .sheet .opt{padding-block:8px}
+.moves{display:flex;flex-direction:column;gap:8px;border:2px solid var(--runner)}
+.mv-h{display:flex;justify-content:space-between;align-items:center;font:700 13px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.mv{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 10px;padding-top:8px;border-top:1px solid var(--line)}
+.mv b{font-weight:700}
+.mv-b{display:flex;gap:6px;flex-wrap:wrap}
+.btn.sm{min-height:40px;padding:0 10px;font-size:14px}
 .sheet-lab{margin:6px 0 0;font:700 12px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font:600 15px var(--f-body);z-index:30;max-width:calc(100% - 32px)}
 @media (prefers-reduced-motion:no-preference){.ob,.pk,.base{transition:transform .08s,background-color .15s}}
@@ -269,7 +275,7 @@ const labelLast=t=>{if(hist.length)hist[hist.length-1].label=t;};
 function addPlay(text,cls){S.plays.push({hl:hl(),text,cls:cls||''});if(cls!=='end'){S.last=text;labelLast(text);}}
 
 function startHalf(){
-  S.outs=0;S.bases=[null,null,null];S.acts=0;S.lastScored=[];
+  S.outs=0;S.bases=[null,null,null];S.acts=0;S.lastScored=[];S.lastMoves=[];
   if(S.line[batSide()][S.inn-1]==null) S.line[batSide()][S.inn-1]=0;
   if(usBat()){S.cur=null;S.needPick=true;}
 }
@@ -308,8 +314,9 @@ function apply(kind){
   snap();
   const b=usBat()?S.cur:'x', who=b==='x'?S.opp+' batter':P(b).name, scored=[];
   let extra='';
-  const adv=n=>{for(let i=2;i>=0;i--){const r=S.bases[i];if(!r)continue;S.bases[i]=null;if(i+n>=3)scored.push(r);else S.bases[i+n]=r;}};
-  const force=()=>{if(S.bases[0]){if(S.bases[1]){if(S.bases[2])scored.push(S.bases[2]);S.bases[2]=S.bases[1];}S.bases[1]=S.bases[0];}S.bases[0]=b;};
+  const moves=[];
+  const adv=n=>{for(let i=2;i>=0;i--){const r=S.bases[i];if(!r)continue;S.bases[i]=null;moves.push({r,from:i,to:Math.min(i+n,3)});if(i+n>=3)scored.push(r);else S.bases[i+n]=r;}};
+  const force=()=>{if(S.bases[0]){if(S.bases[1]){if(S.bases[2]){scored.push(S.bases[2]);moves.push({r:S.bases[2],from:2,to:3});}moves.push({r:S.bases[1],from:1,to:2});S.bases[2]=S.bases[1];}moves.push({r:S.bases[0],from:0,to:1});S.bases[1]=S.bases[0];}S.bases[0]=b;};
   let k=kind, out=0;
   if(k==='SF'&&(S.outs>=2||!S.bases[2])) k='FO';
   if(k==='BB') force();
@@ -332,6 +339,7 @@ function apply(kind){
   const rbi=(k==='E'||k==='FC')?null:b;
   scored.forEach(r=>scoreRun(r,rbi));
   S.lastScored=scored.filter(r=>!(r===b&&k==='HR')).map(r=>({r,rbi:r==='x'?null:rbi}));
+  S.lastMoves=['BB','1B','2B','3B','E'].includes(k)?moves:[];
   let text=who+' '+KIND[k]+'.'+extra;
   if(scored.length){
     const names=scored.filter(r=>r!=='x'&&r!==b).map(nm);
@@ -347,12 +355,12 @@ function apply(kind){
 }
 function quickRun(){ // opponent half: just add a run
   if(S.final||S.paused) return;
-  snap();scoreRun('x',null);S.acts++;addPlay(S.opp+' scored a run.');checkAfterRuns();
+  snap();S.lastMoves=[];scoreRun('x',null);S.acts++;addPlay(S.opp+' scored a run.');checkAfterRuns();
 }
-function quickOut(){if(S.final||S.paused)return;snap();S.acts++;addPlay(S.opp+' batter out.');addOut(1);}
+function quickOut(){if(S.final||S.paused)return;snap();S.lastMoves=[];S.acts++;addPlay(S.opp+' batter out.');addOut(1);}
 function pickBatter(id){snap(P(id).name+' set as batter');S.cur=id;S.next=ord(id);S.needPick=false;}
 function runnerAction(i,act){
-  snap();const r=S.bases[i];
+  snap();S.lastMoves=[];const r=S.bases[i];
   if(act==='adv'){S.bases[i]=null;if(i===2){scoreRun(r,null);addPlay(nm(r)+' scored.');}else{if(S.bases[i+1]){toast('Clear '+BASE[i+1]+' first');hist.pop();S.bases[i]=r;return;}S.bases[i+1]=r;addPlay(nm(r)+' moved to '+BASE[i+1]+'.');}}
   else if(act==='back'){S.bases[i]=null;S.bases[i-1]=r;addPlay(nm(r)+' held at '+BASE[i-1]+'.');}
   else if(act==='score'||act==='scoreRbi'){S.bases[i]=null;const rb=act==='scoreRbi'?S.lastBatter:null;scoreRun(r,rb);(S.lastScored=S.lastScored||[]).push({r,rbi:r==='x'?null:rb});addPlay(nm(r)+' scored'+(rb&&rb!=='x'?' (RBI '+P(rb).name+')':'')+'.');}
@@ -361,15 +369,15 @@ function runnerAction(i,act){
   else if(act==='remove'){S.bases[i]=null;labelLast('Removed '+nm(r)+' from '+BASE[i]);}
   S.acts++;checkAfterRuns();
 }
-function placeRunner(i,r){snap(nm(r)+' put on '+BASE[i]);S.bases[i]=r;}
+function placeRunner(i,r){snap(nm(r)+' put on '+BASE[i]);S.lastMoves=[];S.bases[i]=r;}
 function moveRunner(from,to){
   const r=S.bases[from];if(!r||S.bases[to])return;
-  snap();S.bases[from]=null;S.bases[to]=r;S.acts++;
+  snap();S.lastMoves=[];S.bases[from]=null;S.bases[to]=r;S.acts++;
   addPlay(nm(r)+(to<from?' held at ':' moved to ')+BASE[to]+'.');
 }
 function unScore(k,to){
   const e=(S.lastScored||[])[k];if(!e||S.bases[to]||(e.r!=='x'&&S.bases.includes(e.r)))return;
-  snap();takeBack(k);S.bases[to]=e.r;S.acts++;
+  snap();S.lastMoves=[];takeBack(k);S.bases[to]=e.r;S.acts++;
   addPlay(nm(e.r)+' held at '+BASE[to]+'. Run taken back.');
 }
 function takeBack(k){
@@ -381,8 +389,41 @@ function takeBack(k){
 }
 function outAtHome(k){
   const e=(S.lastScored||[])[k];if(!e)return;
-  snap();takeBack(k);S.acts++;
+  snap();S.lastMoves=[];takeBack(k);S.acts++;
   addPlay(nm(e.r)+' thrown out at home. Run taken back.');addOut(1);
+}
+/* "Check the runners": one-tap fixes for runners the app moved up on the last play. */
+function holdPlan(m){
+  const mv=S.lastMoves[m];if(!mv)return null;
+  const back=mv.to-1;if(back<mv.from)return null;
+  const o=S.bases[back];if(!o)return {back};
+  const oi=S.lastMoves.findIndex((x,j)=>j!==m&&x.to===back&&x.r===o);
+  if(oi<0||back-1<S.lastMoves[oi].from||S.bases[back-1])return null;
+  return {back,o,oi};
+}
+function fixHeld(m){
+  const pl=holdPlan(m);if(!pl)return;const mv=S.lastMoves[m];
+  snap();const msg=[];
+  if(pl.o){S.bases[pl.back]=null;S.bases[pl.back-1]=pl.o;S.lastMoves[pl.oi].to--;}
+  if(mv.to===3){const k=S.lastScored.findIndex(e=>e.r===mv.r);if(k>=0)takeBack(k);S.bases[2]=mv.r;msg.push(nm(mv.r)+' held at 3rd. Run taken back.');}
+  else{S.bases[mv.to]=null;S.bases[pl.back]=mv.r;msg.push(nm(mv.r)+' held at '+BASE[pl.back]+'.');}
+  if(pl.o) msg.push(nm(pl.o)+' held at '+BASE[pl.back-1]+'.');
+  mv.to--;S.lastMoves=S.lastMoves.filter(x=>x.to>x.from);S.acts++;
+  addPlay(msg.join(' '));
+}
+function fixOut(m){
+  const mv=S.lastMoves[m];if(!mv)return;
+  snap();
+  if(mv.to===3){const k=S.lastScored.findIndex(e=>e.r===mv.r);if(k>=0)takeBack(k);addPlay(nm(mv.r)+' thrown out at home. Run taken back.');}
+  else{S.bases[mv.to]=null;addPlay(nm(mv.r)+' thrown out at '+BASE[mv.to]+'.');}
+  S.lastMoves.splice(m,1);S.acts++;addOut(1);
+}
+function movesHTML(){
+  if(S.final||S.paused||!S.lastMoves||!S.lastMoves.length) return '';
+  const rows=S.lastMoves.map((mv,m)=>`<div class="mv"><span><b>${esc(nm(mv.r))}</b> ${mv.to===3?'scored from '+BASE[mv.from]:'to '+BASE[mv.to]+' from '+BASE[mv.from]}</span><span class="mv-b">
+    ${holdPlan(m)?`<button type="button" class="btn sm" data-fix="held" data-m="${m}">Held at ${mv.to===3?'3rd':BASE[mv.to-1]}</button>`:''}
+    <button type="button" class="btn sm" data-fix="out" data-m="${m}">Out at ${mv.to===3?'home':BASE[mv.to]}</button></span></div>`).join('');
+  return `<div class="card moves" aria-live="polite"><div class="mv-h"><span>Check the runners</span><button type="button" class="link" data-fix="ok">Looks right</button></div>${rows}</div>`;
 }
 function homeSheet(){
   const lbl=t=>`<p class="sheet-lab">${t}</p>`, r3=S.bases[2];
@@ -461,6 +502,7 @@ function renderKeep(){
       <button type="button" class="plate" data-plate="1" aria-label="Home plate: scoring and outs at home" ${S.final||S.paused?'disabled':''}><img src="logo.png" alt="" width="56" height="56"></button>
     </div>
     <p class="dia-note">Tap a base to move or put out a runner. Tap home plate for runs and outs at home.</p></div>`;
+  h+=movesHTML();
   if(S.alert){
     const d=lead(), lt=d>0?teamName('home'):teamName('away');
     const lose=d>0?teamName('away'):teamName('home');
@@ -576,6 +618,7 @@ document.addEventListener('click',e=>{
   if(tab){const fan=tab.id==='tabFan';$('#tabKeep').setAttribute('aria-selected',!fan);$('#tabFan').setAttribute('aria-selected',fan);$('#colKeep').hidden=fan;$('#colFan').hidden=!fan;return;}
   if(t.closest('[data-close]')||t===$('#sheet')){closeSheet();return;}
   const ra=t.closest('[data-ra]');if(ra){closeSheet();runnerAction(+ra.dataset.i,ra.dataset.ra);render();return;}
+  const fx=t.closest('[data-fix]');if(fx){const f=fx.dataset.fix;if(f==='ok'){S.lastMoves=[];}else if(f==='held')fixHeld(+fx.dataset.m);else fixOut(+fx.dataset.m);render();if(f!=='ok'&&S.last)toast(S.last);return;}
   const hp=t.closest('[data-plate]');if(hp){homeSheet();return;}
   const oh=t.closest('[data-oh]');if(oh){closeSheet();outAtHome(+oh.dataset.oh);render();return;}
   const mv=t.closest('[data-mv]');if(mv){closeSheet();moveRunner(+mv.dataset.mv,+mv.dataset.i);render();return;}
