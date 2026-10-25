@@ -203,6 +203,30 @@ V4
   commissioner and a place to keep standings for our division. Many
   teams, schedules, scores and standings, with each team managing its
   own lineup. To be worked out when we get there.
+V2 / V3: Scorekeeper and live Gameday (design agreed 2026-10-24)
+- Scorekeeper view: 7-inning line score (Away always on top, R and H),
+  inning, outs (3 dots), and a diamond where tapping a base moves,
+  scores or removes a runner. Saucers logo on home plate (need file).
+- Saucers at bat: scorekeeper picks the leadoff hitter each inning,
+  then taps the result: Walk, 1B, 2B, 3B, HR, Fly / Line / Ground out,
+  Strikeout. It moves to the next batter and tracks AB, H, R, RBI,
+  BB, K. Suggested extras: Sac fly, Fielder's choice, Error.
+- Opponent at bat: same result buttons with no names, plus +1 Run and
+  +1 Out. Third out flips the half-inning and fills in a 0.
+- "We are Home / Away" picked per game.
+- Final button any time (blanks the rest of the innings), Extra inning
+  button. Mercy rule: 10+ runs after 4 innings, losing team always
+  gets its last chance (app asks, never ends the game on its own).
+- Team view = basic MLB Gameday: score, inning, outs, runners, batter
+  and on deck, last play, play-by-play, Saucers box score.
+- Scorekeepers: the two clipboard keepers share one score-only key that
+  can't change the lineup.
+- Hosting: trial on GitHub (separate score repo published by a GitHub
+  Actions workflow, about a minute behind, since plain Pages allows
+  only ~10 rebuilds an hour). Move to a Cloudflare-style live service
+  once it's a solid V2.
+- Mock-up built and shared (private claude.ai page).
+
 V2 / V3 additions
 - Formal name plus a nickname / alternate name for each player, so the
   stats show the right name while the lineup keeps using nicknames.
