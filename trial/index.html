@@ -411,10 +411,15 @@ function fixHeld(m){
   mv.to--;S.lastMoves=S.lastMoves.filter(x=>x.to>x.from);S.acts++;
   addPlay(msg.join(' '));
 }
-function fixOut(m){
+function outSheet(m){
+  const mv=S.lastMoves[m];if(!mv)return;
+  const opts=[];for(let b=mv.from+1;b<=3;b++) opts.push(`<button type="button" class="opt bad" data-fix="out" data-m="${m}" data-at="${b}">Out at ${b===3?'home':BASE[b]}</button>`);
+  sheet(`<h3 id="sheetT">${esc(nm(mv.r))} thrown out</h3><p class="foot">Where did the out happen? The run comes off the board.</p>${opts.join('')}<button type="button" class="opt" data-close>Cancel</button>`);
+}
+function fixOut(m,at){
   const mv=S.lastMoves[m];if(!mv)return;
   snap();
-  if(mv.to===3){const k=S.lastScored.findIndex(e=>e.r===mv.r);if(k>=0)takeBack(k);addPlay(nm(mv.r)+' thrown out at home. Run taken back.');}
+  if(mv.to===3){const k=S.lastScored.findIndex(e=>e.r===mv.r);if(k>=0)takeBack(k);const w=at>=1&&at<3?BASE[at]:'home';addPlay(nm(mv.r)+' thrown out at '+w+'. Run taken back.');}
   else{S.bases[mv.to]=null;addPlay(nm(mv.r)+' thrown out at '+BASE[mv.to]+'.');}
   S.lastMoves.splice(m,1);S.acts++;addOut(1);
 }
@@ -422,7 +427,7 @@ function movesHTML(){
   if(S.final||S.paused||!S.lastMoves||!S.lastMoves.length) return '';
   const rows=S.lastMoves.map((mv,m)=>`<div class="mv"><span><b>${esc(nm(mv.r))}</b> ${mv.to===3?'scored from '+BASE[mv.from]:'to '+BASE[mv.to]+' from '+BASE[mv.from]}</span><span class="mv-b">
     ${holdPlan(m)?`<button type="button" class="btn sm" data-fix="held" data-m="${m}">Held at ${mv.to===3?'3rd':BASE[mv.to-1]}</button>`:''}
-    <button type="button" class="btn sm" data-fix="out" data-m="${m}">Out at ${mv.to===3?'home':BASE[mv.to]}</button></span></div>`).join('');
+    ${mv.to===3&&mv.from<2?`<button type="button" class="btn sm" data-fix="outpick" data-m="${m}">Out at…</button>`:`<button type="button" class="btn sm" data-fix="out" data-m="${m}">Out at ${mv.to===3?'home':BASE[mv.to]}</button>`}</span></div>`).join('');
   return `<div class="card moves" aria-live="polite"><div class="mv-h"><span>Check the runners</span><button type="button" class="link" data-fix="ok">Looks right</button></div>${rows}</div>`;
 }
 function homeSheet(){
@@ -618,7 +623,7 @@ document.addEventListener('click',e=>{
   if(tab){const fan=tab.id==='tabFan';$('#tabKeep').setAttribute('aria-selected',!fan);$('#tabFan').setAttribute('aria-selected',fan);$('#colKeep').hidden=fan;$('#colFan').hidden=!fan;return;}
   if(t.closest('[data-close]')||t===$('#sheet')){closeSheet();return;}
   const ra=t.closest('[data-ra]');if(ra){closeSheet();runnerAction(+ra.dataset.i,ra.dataset.ra);render();return;}
-  const fx=t.closest('[data-fix]');if(fx){const f=fx.dataset.fix;if(f==='ok'){S.lastMoves=[];}else if(f==='held')fixHeld(+fx.dataset.m);else fixOut(+fx.dataset.m);render();if(f!=='ok'&&S.last)toast(S.last);return;}
+  const fx=t.closest('[data-fix]');if(fx){const f=fx.dataset.fix;if(f==='outpick'){outSheet(+fx.dataset.m);return;}closeSheet();if(f==='ok'){S.lastMoves=[];}else if(f==='held')fixHeld(+fx.dataset.m);else fixOut(+fx.dataset.m,fx.dataset.at?+fx.dataset.at:undefined);render();if(f!=='ok'&&S.last)toast(S.last);return;}
   const hp=t.closest('[data-plate]');if(hp){homeSheet();return;}
   const oh=t.closest('[data-oh]');if(oh){closeSheet();outAtHome(+oh.dataset.oh);render();return;}
   const mv=t.closest('[data-mv]');if(mv){closeSheet();moveRunner(+mv.dataset.mv,+mv.dataset.i);render();return;}

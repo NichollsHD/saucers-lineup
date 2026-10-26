@@ -12,6 +12,18 @@ published from the app, not code changes. They aren't listed here.
 
 
 ---------------------------------------------------------------------
+v1.8.4  -  2026-10-25   (trial page only)
+---------------------------------------------------------------------
+CHANGED (from tester question)
+- In "Check the runners", a runner who scored from 1st or 2nd now has
+  an "Out at..." button that asks where the out happened (2nd, 3rd or
+  home). The run comes off the board, one out is added, and the play
+  log names the right base. Example: triple with runners on 1st and
+  2nd, the lead runner is out at 3rd, the other still scores.
+- Error and RBI tagging for plays like this is left for the real build.
+
+
+---------------------------------------------------------------------
 v1.8.3  -  2026-10-24   (trial page only)
 ---------------------------------------------------------------------
 ADDED (from tester feedback)
