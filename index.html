@@ -147,6 +147,12 @@ body.dragging .slot.over.no .mag,body.dragging .slot.over.no .open{box-shadow:0 
 .where.bench{background:transparent;color:var(--muted);border:1px solid var(--line)}
 .where.warn{background:var(--warn-bg);color:var(--warn)}
 .where.out{background:transparent;color:var(--muted)}
+.where.il{background:var(--bad-bg);color:var(--bad)}
+.roll-il{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:1px dashed var(--line);color:var(--muted)}
+.roll-il b{font:600 16px var(--f-body);flex:1;min-width:0}
+.roll-il .tag-il{font:700 12px var(--f-display);letter-spacing:.06em;color:var(--bad)}
+.switch.il[aria-checked="true"]{background:var(--bad)}
+.switch:disabled{opacity:.4;cursor:not-allowed}
 .outs .row{grid-template-columns:minmax(0,1fr) auto;padding-left:14px;opacity:.75}
 .foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}
 .link{all:unset;cursor:pointer;color:var(--muted);font-size:13px;text-decoration:underline;text-underline-offset:3px}
@@ -337,6 +343,10 @@ input[type=text],input[type=url],input[type=date]{font:500 17px var(--f-body);pa
         <h2 style="margin:6px 0 10px">Out today <span class="ct" id="outCt"></span></h2>
         <ol class="lineup outs" id="outs"></ol>
       </div>
+      <div id="ilWrap" hidden>
+        <h2 style="margin:6px 0 10px">Injured list <span class="ct" id="ilCt"></span></h2>
+        <ol class="lineup outs" id="ilList"></ol>
+      </div>
       <div class="foot">
         <div class="foot-btns"><button id="add" class="btn" type="button">Add player</button><button id="backup" class="btn" type="button">Back up roster</button><button class="btn" type="button" data-act="restore">Restore roster</button></div>
         <span class="foot-btns"><button id="reset" class="link" type="button">Start over</button><button id="signout" class="link" type="button">Sign out of manager</button></span>
@@ -446,6 +456,7 @@ function sanitize(){
     const id=state.field[k], p=byId(id);
     if(!valid.includes(k)||!p||!p.in||seen.has(id)) delete state.field[k]; else seen.add(id);
   }
+  state.players.forEach(p=>{if(p.il) p.in=false;});
   state.order=state.order.filter(id=>byId(id));
   state.players.forEach(p=>{if(!state.order.includes(p.id)) state.order.push(p.id)});
 }
@@ -454,6 +465,7 @@ function commit(){state.sample=false;sanitize();save();render();if(openSheet) op
 /* ---------- actions ---------- */
 function assign(id,spot){
   const p=byId(id); if(!p) return;
+  if(p.il){toast(p.name+' is on the injured list.');return}
   if(!p.in){toast(p.name+' is marked out today.');return}
   const from=spotOf(id); if(from===spot) return;
   const occ=state.field[spot];
@@ -527,7 +539,7 @@ function renderStatus(){
   const filled=spots.length-open.length;
   const off=all.filter(s=>state.field[s]&&!canPlay(byId(state.field[s]),s));
   const bench=benchIds().map(byId);
-  const ins=inOrder().length, outs=state.players.length-ins;
+  const ins=inOrder().length, ils=state.players.filter(p=>p.il).length, outs=state.players.length-ins-ils;
   let pill=open.length?`<span class="pill bad">${open.length} open</span>`:`<span class="pill ok">Full defense</span>`;
   let items=open.map(s=>{
     const c=bench.filter(p=>canPlay(p,s));
@@ -543,7 +555,7 @@ function renderStatus(){
   const subs=subIds().length;
   $('#status').innerHTML=`<div class="stat-head"><span class="count">${filled}/${spots.length}<small>on the field</small></span>${pill}</div>
     ${items?`<ul class="issues">${items}</ul>`:''}
-    <p class="meta">${ins} in today${subs?` · ${ins-subs} batting · ${subs} sub${subs>1?'s':''}`:` · ${bench.length} on the bench`}${outs?` · ${outs} out`:''} · <button type="button" class="link" data-act="roll">Who's in</button></p>`;
+    <p class="meta">${ins} in today${subs?` · ${ins-subs} batting · ${subs} sub${subs>1?'s':''}`:` · ${bench.length} on the bench`}${outs?` · ${outs} out`:''}${ils?` · ${ils} injured`:''} · <button type="button" class="link" data-act="roll">Who's in</button></p>`;
   $('#roll').textContent=state.players.length?`Who's in (${ins})`:"Who's in";
 }
 function renderBench(){
@@ -565,9 +577,11 @@ function renderLineup(){
       <span class="where${s?(warn?' warn':''):' bench'}">${s?L(s):'Bench'}</span></li>`;
   }).join('');
   if(!state.players.length) $('#lineup').innerHTML=`<li class="empty-roster"><b>No roster yet</b><span>Restore your roster file to load the team, or add players one at a time.</span><div class="empty-actions"><button class="btn primary" type="button" data-act="restore">Restore roster</button><button class="btn" type="button" data-act="add">Add player</button></div></li>`;
-  const out=state.order.map(byId).filter(p=>p&&!p.in);
+  const out=state.order.map(byId).filter(p=>p&&!p.in&&!p.il), il=state.order.map(byId).filter(p=>p&&p.il);
   $('#outWrap').hidden=!out.length; $('#outCt').textContent=out.length;
   $('#outs').innerHTML=out.map(p=>`<li class="row"><button class="rname" type="button" data-edit="${p.id}"><b>${esc(p.name)}</b><small>${esc(posText(p))}</small></button><span class="where out">Out</span></li>`).join('');
+  $('#ilWrap').hidden=!il.length; $('#ilCt').textContent=il.length;
+  $('#ilList').innerHTML=il.map(p=>`<li class="row"><button class="rname" type="button" data-edit="${p.id}"><b>${esc(p.name)}</b><small>${esc(p.ilNote||posText(p))}</small></button><span class="where il">IL</span></li>`).join('');
   $('#sampleNote').hidden=!state.sample;
 }
 function render(){
@@ -658,6 +672,7 @@ document.addEventListener('click',e=>{
     else if(k==='board') goBoard();else if(k==='refresh') loadLive(false);else if(k==='roll') openRoll();else if(k==='fields'){closeSheet();openFields();}else if(k==='log'){closeSheet();openLog();}
     else if(k==='preview'){closeSheet();stopLive();renderTeam(cleanLineup(lineupPayload()),'preview');show('team');scrollTo(0,0);}
     return}
+  const ib=t.closest('[data-ilback]'); if(ib){const p=byId(ib.dataset.ilback);if(p) setIL(p,false);return}
   const rl=t.closest('[data-roll]'); if(rl){const p=byId(rl.dataset.roll);if(p){p.in=!p.in;commit();}return}
   const ra=t.closest('[data-rollall]'); if(ra){setAll(ra.dataset.rollall==='1');return}
   const bt=t.closest('[data-bat]'); if(bt){state.bat=bt.dataset.bat==='0'?0:12;commit();return}
@@ -711,7 +726,9 @@ function openEdit(id,focusName){
       <div class="sheet-head"><h3 id="sheetTitle">${esc(p.name||'New player')}</h3><button class="btn" type="button" data-close>Done</button></div>
       <label class="fld"><span>Name</span><input type="text" id="pName" value="${esc(p.name)}" placeholder="Player name" autocomplete="off"></label>
       <label class="fld"><span>Nickname on the magnet</span><input type="text" id="pNick" value="${esc(p.nick||'')}" placeholder="Optional" autocomplete="off"></label>
-      <div class="switch-row"><span class="fld"><span>Playing today</span></span><button type="button" class="switch" id="pIn" role="switch" aria-checked="${p.in}" aria-label="Playing today"></button></div>
+      <div class="switch-row"><span class="fld"><span>Playing today</span></span><button type="button" class="switch" id="pIn" role="switch" aria-checked="${p.in}" aria-label="Playing today" ${p.il?'disabled':''}></button></div>
+      <div class="switch-row"><span class="fld"><span>Injured list</span></span><button type="button" class="switch il" id="pIL" role="switch" aria-checked="${!!p.il}" aria-label="Injured list"></button></div>
+      ${p.il?`<label class="fld"><span>Injury note</span><input type="text" id="pILNote" value="${esc(p.ilNote||'')}" placeholder="Optional, e.g. Quad, out for the season" maxlength="60" autocomplete="off"><small>Stays off Who's in and the lineup until you take him off the injured list. Only you see this note.</small></label>`:''}
       <div class="fld"><span>Can play</span><div class="chips" id="pPos">${ALL_POS.map(x=>`<button type="button" class="chip" data-pos="${x}" aria-pressed="${p.pos.includes(x)}">${x}</button>`).join('')}</div>
         <small>LCF and RCF are the two center field spots. In 3-outfielder mode, either one covers CF. DH means bat only.</small></div>
       <div class="fld"><span>Put at</span><div class="chips" id="pSpot">
@@ -722,7 +739,9 @@ function openEdit(id,focusName){
     const inp=$('#pName');
     inp.oninput=()=>{p.name=inp.value;$('#sheetTitle').textContent=inp.value||'New player';save();render();};
     const nk=$('#pNick');nk.oninput=()=>{p.nick=nk.value;save();render();};
-    $('#pIn').onclick=()=>{p.in=!p.in;commit();};
+    $('#pIn').onclick=()=>{if(p.il)return;p.in=!p.in;commit();};
+    $('#pIL').onclick=()=>{setIL(p,!p.il);build();};
+    const iln=$('#pILNote');if(iln) iln.oninput=()=>{p.ilNote=iln.value.slice(0,60);save();render();};
     $('#pPos').onclick=e=>{const b=e.target.closest('[data-pos]');if(!b)return;const x=b.dataset.pos;p.pos=p.pos.includes(x)?p.pos.filter(y=>y!==x):p.pos.concat(x);state.sample=false;commit();};
     $('#pSpot').onclick=e=>{const b=e.target.closest('[data-spot]');if(!b||b.disabled)return;b.dataset.spot?assign(id,b.dataset.spot):toBench(id);};
     $('#pRemove').onclick=()=>{
@@ -752,22 +771,30 @@ function openPicker(spot){
 function openRoll(){
   if(!state.players.length){toast('Load your roster first');return}
   const build=()=>{
-    const ps=state.players.slice().sort((a,b)=>a.name.trim().localeCompare(b.name.trim(),undefined,{sensitivity:'base'})), ins=ps.filter(p=>p.in).length;
+    const all=state.players.slice().sort((a,b)=>a.name.trim().localeCompare(b.name.trim(),undefined,{sensitivity:'base'}));
+    const ps=all.filter(p=>!p.il), il=all.filter(p=>p.il), ins=ps.filter(p=>p.in).length;
     $('#panel').innerHTML=`
       <div class="sheet-head"><h3 id="sheetTitle">Who's in this week</h3><button class="btn" type="button" data-close>Done</button></div>
       <div class="roll-head"><span class="roll-count">${ins} in · ${ps.length-ins} out</span>
         <span class="foot-btns"><button class="btn" type="button" data-rollall="1">Everyone in</button><button class="btn" type="button" data-rollall="0">Everyone out</button></span></div>
       <small class="meta">Tap anyone who isn't coming. Only players marked in show on the team's lineup.</small>
       <div class="roll-list">${ps.map(p=>`<button type="button" class="roll${p.in?' in':''}" data-roll="${p.id}" aria-pressed="${p.in}"><span class="box" aria-hidden="true"></span><b>${esc(p.name)}</b><small>${p.in?'In':'Out'}</small></button>`).join('')}</div>
+      ${il.length?`<div class="fld"><span>Injured list · ${il.length}</span><div class="roll-list">${il.map(p=>`<div class="roll-il"><b>${esc(p.name)}</b><span class="tag-il">IL</span><button type="button" class="btn" data-ilback="${p.id}">Activate</button></div>`).join('')}</div><small>Injured players stay off the lineup. Activate to bring someone back and mark him in.</small></div>`:''}
       <div class="fld"><span>Batting order</span><div class="seg" role="group" aria-label="Batting order size">
         <button type="button" data-bat="12" aria-pressed="${state.bat!==0}">Top 12 bat</button><button type="button" data-bat="0" aria-pressed="${state.bat===0}">Everyone bats</button></div>
         <small>With Top 12, anyone past the 12th spot is listed as a sub without a number.</small></div>`;
   };
   showSheet('roll',build);
 }
+/* Injured list: off Who's in, the lineup and the field until reactivated. Coming off it marks him in. */
+function setIL(p,on){
+  if(on){p.il=true;p.in=false;toast(shortName(p)+' moved to the injured list');}
+  else{delete p.il;delete p.ilNote;p.in=true;toast(shortName(p)+' is off the injured list and marked in');}
+  commit();
+}
 function setAll(v){
   const snap=JSON.stringify(state.players.map(p=>[p.id,p.in]));
-  state.players.forEach(p=>p.in=v); commit();
+  state.players.forEach(p=>{if(!p.il) p.in=v;}); commit();
   toast(v?'Everyone marked in':'Everyone marked out','Undo',()=>{const m=new Map(JSON.parse(snap));state.players.forEach(p=>{if(m.has(p.id)) p.in=m.get(p.id)});commit();});
 }
 
@@ -1017,7 +1044,7 @@ function openLog(){
 function backup(){
   if(!state.players.length){toast('Nothing to back up yet');return}
   const data={app:'saucers-lineup',v:1,savedAt:new Date().toISOString(),
-    players:state.players.map(p=>({id:p.id,name:p.name,nick:p.nick||'',pos:p.pos,in:p.in})),
+    players:state.players.map(p=>Object.assign({id:p.id,name:p.name,nick:p.nick||'',pos:p.pos,in:p.in},p.il?{il:true,ilNote:p.ilNote||''}:{})),
     order:state.order,of:state.of,field:state.field,note:state.note||'',gtime:state.gtime||'',gfield:state.gfield||'',fields:(state.fields||[]).map(f=>({id:f.id,name:f.name,alias:f.alias||'',url:f.url||''})),bat:state.bat===0?0:12};
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
@@ -1035,7 +1062,8 @@ function restore(file){
       let id=(typeof p.id==='string'&&/^[\w-]{1,40}$/.test(p.id)&&!seen.has(p.id))?p.id:'r'+i+Date.now().toString(36);
       seen.add(id);
       return {id,name:p.name.slice(0,60),nick:typeof p.nick==='string'?p.nick.slice(0,30):'',
-        pos:Array.isArray(p.pos)?ALL_POS.filter(x=>p.pos.includes(x)):[],in:p.in!==false};
+        pos:Array.isArray(p.pos)?ALL_POS.filter(x=>p.pos.includes(x)):[],in:p.in!==false&&p.il!==true,
+        ...(p.il===true?{il:true,ilNote:typeof p.ilNote==='string'?p.ilNote.slice(0,60):''}:{})};
     });
     if(!players.length) throw 0;
     const snap=JSON.stringify(state);

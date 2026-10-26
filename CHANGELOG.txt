@@ -12,6 +12,23 @@ published from the app, not code changes. They aren't listed here.
 
 
 ---------------------------------------------------------------------
+v1.9  -  2026-10-26
+---------------------------------------------------------------------
+ADDED
+- Injured list. In a player's edit sheet, turn on "Injured list" (with
+  an optional injury note only the manager sees). He drops off Who's
+  in, the batting order and the field, and "Everyone in" skips him.
+- The board shows an "Injured list" section under Out today, and the
+  status line counts injured players separately (e.g. "1 injured").
+- Who's in lists injured players at the bottom with an Activate
+  button. Activating takes him off the list and marks him in.
+- Injured status and note are saved in the roster backup file and
+  restored with it. Nothing about the injured list is published to
+  the team link or the game log.
+- Service worker cache bumped to saucers-v11 so phones pick it up.
+
+
+---------------------------------------------------------------------
 v1.8.4  -  2026-10-25   (trial page only)
 ---------------------------------------------------------------------
 CHANGED (from tester question)
