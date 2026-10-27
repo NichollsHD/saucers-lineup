@@ -1,6 +1,6 @@
 // Saucers Lineup service worker: keeps the app working offline at the field.
 // Bump CACHE when you publish a new version so phones pick up the update.
-const CACHE = 'saucers-v12';
+const CACHE = 'saucers-v13';
 const CORE = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png',
   './sponsors/stonebridge.png', './sponsors/skyline.jpg'];

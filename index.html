@@ -834,9 +834,9 @@ const gGame=()=>['1','2','x','n'].includes(state.ggame)?state.ggame:'1';
 const todayStr=()=>new Date().toLocaleDateString('en-CA');
 const gDate=()=>/^\d{4}-\d{2}-\d{2}$/.test(state.gdate||'')?state.gdate:todayStr();
 function lineupPayload(){
-  /* Only this week's players are published. n = batting order size (0 = everyone bats). */
+  /* Only this week's players are published, by first name / nickname only.  n = batting order size (0 = everyone bats). */
   return {v:1,of:state.of,t:(state.note||'').trim(),tm:(state.gtime||'').trim(),fl:(state.gfield||'').trim(),fu:fieldLink(state.gfield),g:(gGame()==='1'||gGame()==='2')?gGame():'',d:Date.now(),n:state.bat===0?0:12,
-    b:inOrder().map(id=>{const p=byId(id);return [shortName(p),fullName(p),spotOf(id)||'']}),
+    b:inOrder().map(id=>{const p=byId(id);return [shortName(p),shortName(p),spotOf(id)||'']}),
     o:[],il:state.players.filter(p=>p.il).map(p=>shortName(p))};
 }
 function cleanLineup(o){

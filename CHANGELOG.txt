@@ -12,6 +12,19 @@ published from the app, not code changes. They aren't listed here.
 
 
 ---------------------------------------------------------------------
+v1.9.2  -  2026-10-27
+---------------------------------------------------------------------
+CHANGED
+- The team link now publishes first names / nicknames only. Full names
+  are no longer sent. Same-first-name players show a last initial
+  (Mike M., Mike D.), the same as the magnets on your board.
+- Your board, roster backup and the WhatsApp/text message are
+  unchanged. Older lineups already in the repo's history still have
+  full names.
+- Service worker cache bumped to saucers-v13.
+
+
+---------------------------------------------------------------------
 v1.9.1  -  2026-10-26
 ---------------------------------------------------------------------
 ADDED
