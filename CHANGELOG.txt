@@ -350,8 +350,24 @@ V2 / V3 additions
 - Mid-game substitutions: the scorekeeper taps players in and out
   during the game, which gives real innings / playing time. Goes with
   the live score feed.
+Official app (decided direction, 2026-10-27)
+- One domain, three doors: / team view (public), /score scorekeepers
+  (code), /manage manager (real login). Moves off GitHub Pages to
+  Cloudflare (pages + worker + database, free tier). Roster and injury
+  notes live privately on the server; the public side only gets what
+  the team view needs.
+- Every at-bat stored as an event so stats, Undo and take-backs all
+  come from one log. Offline queue for the scorekeeper (bad field
+  signal). team_id on every record so V4 league edition is adding
+  teams, not a rebuild. Import existing lineup.json / games.json, then
+  retire the GitHub token.
+- Order: 1) domain + team view + manager login, 2) scorekeeper + live
+  scores, 3) season stats / player profiles, 4) league edition.
+- Build after the season, Opus at high effort. Open questions: domain
+  name (about $12/yr), one shared scorekeeper code vs one per person,
+  manager login (email link / passkey), co-manager, team view public
+  vs behind a team code.
 Ideas
-- First names / nicknames only in the published lineup (lineup.json
-  is public).
-- Short nichollshd.github.io link that forwards to the app.
+- Until the domain exists, keep the long github.io link in the app.
+  The bit.ly link (bit.ly/3ULSHkW) forwards to it and is fine to text.
 - Field nicknames are guesses (WB 2, SB 7...). Edit them in Manage fields.
