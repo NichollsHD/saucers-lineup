@@ -147,6 +147,8 @@ body.dragging .slot.over.no .mag,body.dragging .slot.over.no .open{box-shadow:0 
 .where.bench{background:transparent;color:var(--muted);border:1px solid var(--line)}
 .where.warn{background:var(--warn-bg);color:var(--warn)}
 .where.out{background:transparent;color:var(--muted)}
+.il-line{margin-top:10px}
+.il-line b{color:var(--bad)}
 .where.il{background:var(--bad-bg);color:var(--bad)}
 .roll-il{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:1px dashed var(--line);color:var(--muted)}
 .roll-il b{font:600 16px var(--f-body);flex:1;min-width:0}
@@ -835,7 +837,7 @@ function lineupPayload(){
   /* Only this week's players are published. n = batting order size (0 = everyone bats). */
   return {v:1,of:state.of,t:(state.note||'').trim(),tm:(state.gtime||'').trim(),fl:(state.gfield||'').trim(),fu:fieldLink(state.gfield),g:(gGame()==='1'||gGame()==='2')?gGame():'',d:Date.now(),n:state.bat===0?0:12,
     b:inOrder().map(id=>{const p=byId(id);return [shortName(p),fullName(p),spotOf(id)||'']}),
-    o:[]};
+    o:[],il:state.players.filter(p=>p.il).map(p=>shortName(p))};
 }
 function cleanLineup(o){
   if(!o||o.v!==1||!Array.isArray(o.b)) return null;
@@ -843,7 +845,8 @@ function cleanLineup(o){
   const b=o.b.filter(Array.isArray).slice(0,40).map(e=>{const d=str(e[0],40)||'Player';return [d,str(e[1],60)||d,ORDER[of].includes(e[2])?e[2]:'']});
   const out=Array.isArray(o.o)?o.o.map(x=>str(x,60)).filter(Boolean).slice(0,40):[];
   const n=(typeof o.n==='number'&&o.n>0)?Math.floor(o.n):0;
-  return {of,b,o:out,n,t:str(o.t,80),tm:str(o.tm,60),fl:str(o.fl,60),fu:safeMapUrl(str(o.fu,300)),g:(o.g==='1'||o.g==='2')?o.g:'',d:typeof o.d==='number'?o.d:0};
+  const il=Array.isArray(o.il)?o.il.map(x=>str(x,40)).filter(Boolean).slice(0,20):[];
+  return {of,b,o:out,il,n,t:str(o.t,80),tm:str(o.tm,60),fl:str(o.fl,60),fu:safeMapUrl(str(o.fu,300)),g:(o.g==='1'||o.g==='2')?o.g:'',d:typeof o.d==='number'?o.d:0};
 }
 const decodeLineup=code=>{try{return cleanLineup(JSON.parse(b64d(code)))}catch(e){return null}};
 function lineupText(){
@@ -1149,6 +1152,7 @@ function renderTeam(Lu,mode){
       <section class="col" aria-label="Batting order">
         <h2>Batting order <span class="ct">${bats}</span></h2>
         <ol class="lineup">${rows||'<li class="empty-roster"><span>No players listed.</span></li>'}</ol>
+        ${Lu.il&&Lu.il.length?`<p class="meta il-line"><b>Injured list:</b> ${Lu.il.map(esc).join(', ')}</p>`:''}
       </section>
     </main>`+foot;
 }

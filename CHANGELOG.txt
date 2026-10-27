@@ -12,6 +12,18 @@ published from the app, not code changes. They aren't listed here.
 
 
 ---------------------------------------------------------------------
+v1.9.1  -  2026-10-26
+---------------------------------------------------------------------
+ADDED
+- Team view shows an "Injured list: Yadiel" line under the batting
+  order when anyone is on the injured list. First names / nicknames
+  only. The injury note stays private and is never published.
+- Players on the injured list are still left out of the batting order
+  and the game log.
+- Service worker cache bumped to saucers-v12.
+
+
+---------------------------------------------------------------------
 v1.9  -  2026-10-26
 ---------------------------------------------------------------------
 ADDED
