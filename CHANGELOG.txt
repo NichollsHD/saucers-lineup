@@ -367,19 +367,24 @@ Official app (decided direction, 2026-10-27)
   name (about $12/yr), one shared scorekeeper code vs one per person,
   manager login (email link / passkey), co-manager, team view public
   vs behind a team code.
-Domain and branding (decided 2026-10-27)
-- Domain: 5thBoro.com (Matt's, registered at GoDaddy; confirm).
-  saucers.5thboro.com = Sunday Saucers home (team view, /score for
-  scorekeepers, /manage for the manager). dugout.5thboro.com = the
-  platform and league hub. Each future team = name.5thboro.com.
-  TheClipboard.com is taken, so skip it; "clipboard" stays the name
-  of the scorekeeper side.
+Domain and branding (revised 2026-10-27)
+- 5thBoro.com belongs to the league, not Matt. Do NOT build on it or
+  use the league's name or logo without the owner's OK. Idea for later:
+  once the app runs, show him; he can point something like
+  scores.5thboro.com at it (reversible). That is also the V4 pitch.
+- Saucers' home: a domain Matt controls. First pick SundaySaucers.com
+  (fallbacks: sundaysaucers.app, thesundaysaucers.com,
+  saucersoftball.com, sundaysaucers.net). To be bought at cost
+  (about $10-15/yr).
+- Platform name "Dugout" (e.g. dugout.<a domain Matt owns>) if Nicholls
+  Tech has a domain. TheClipboard.com is taken; "clipboard" stays the
+  name of the scorekeeper side.
 - Sunday Saucers is a brand, not just a team: logo, colors, sponsor
   strip on the team site.
 - Every page footer says "Powered by Nicholls Tech" (link and logo
   to be supplied).
-- Plan: keep the domain at GoDaddy and point its name servers to a
-  free Cloudflare account (copy any existing DNS records first).
+- DNS: use a free Cloudflare account. If the domain is bought through
+  Cloudflare, no name-server move is needed.
 Ideas
 - Until the domain exists, keep the long github.io link in the app.
   The bit.ly link (bit.ly/3ULSHkW) forwards to it and is fine to text.
