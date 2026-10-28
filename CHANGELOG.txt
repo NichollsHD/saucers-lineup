@@ -385,6 +385,26 @@ Domain and branding (revised 2026-10-27)
   to be supplied).
 - DNS: use a free Cloudflare account. If the domain is bought through
   Cloudflare, no name-server move is needed.
+Roles and logins (proposed by Matt 2026-10-27, refined)
+- Fan: no login. Live score, standings, player stats, lineup. First
+  names only.
+- Clipboard: a team code (manager can change it). Enters plays for that
+  team's active game only. Cannot touch roster or lineup.
+- Manager: real login. Edits that team's roster and lineup, publishes,
+  injured list, issues the Clipboard code. Only their own team.
+- Admin: real login. Two levels: Matt (platform owner) and Chris
+  Ostrow (commissioner, admin of his league only). Manages teams,
+  standings, any game result. Every admin edit is logged.
+- Private details (full names, injuries, notes) visible to Manager and
+  Admin only.
+- Open design question: who enters the opponent's results for the
+  standings. Leaning: a game is official once both managers confirm,
+  with a conflict flag for the commissioner.
+- Sequencing: build the Saucers side first (Fan, Clipboard, Manager)
+  with Admin designed in; league features wait until Chris is on board.
+- Domains: Nicholls Tech has none yet. Plan two cheap ones: the
+  Saucers' home (SundaySaucers.com or a fallback) and a Nicholls Tech
+  domain hosting dugout.<that domain>. Buy whenever convenient.
 Ideas
 - Until the domain exists, keep the long github.io link in the app.
   The bit.ly link (bit.ly/3ULSHkW) forwards to it and is fine to text.
