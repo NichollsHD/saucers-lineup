@@ -399,6 +399,19 @@ Decisions (2026-10-27)
 - Nicholls Tech domain: later. Reminder set for Nov 10, 7:20 am.
 - Next: write the build spec for approval (Opus, high effort).
 
+Build spec (2026-10-27, draft for Matt's approval)
+- Written as a doc: https://claude.ai/artifact/2jAwmnn6bWcimZwRVT1tdK
+- Stack: Cloudflare Workers static assets + one API Worker + D1 +
+  one Durable Object per live game (WebSockets push, 15s polling
+  fallback). Private GitHub repo; GitHub Actions deploys with a
+  Cloudflare token kept in GitHub secrets.
+- Passkeys (two per person) + 10 one-time recovery codes. Clipboard
+  code like SAUCE-4827, rate-limited, scores games only.
+- Plays stored as an append-only log; Undo adds a cancelling entry.
+  Offline queue on the Clipboard phone; "the pen" = one scorer per game.
+- Phases: 1 Foundation, 2 Clipboard (both before next season's
+  opener), 3 Stats, 4 League (only with the commissioner's okay).
+
 Roles and logins (proposed by Matt 2026-10-27, refined)
 - Fan: no login. Live score, standings, player stats, lineup. First
   names only.
