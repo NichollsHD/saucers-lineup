@@ -420,6 +420,17 @@ Build spec (2026-10-27, draft for Matt's approval)
   like the phone (Face ID, fingerprint or the phone's passcode), so
   nobody has to use Face ID. Cloudflare two-step login is on.
 
+Proof of concept (started 2026-10-27, for a commissioner demo)
+- New private repo NichollsHD/sundaysaucers -> SundaySaucers.com
+  (Cloudflare Worker + static pages + D1 + LiveGame Durable Object).
+  Deploys on push via GitHub Actions; each deploy writes STATUS and
+  deploy.log to the deploy-status branch.
+- In the preview: fan home, live game page (push updates, 15s fallback),
+  Clipboard (weekend demo code, offline send queue, one-scorer pen with
+  take-over), box score after Final, sample league page (made-up teams).
+- Not yet: manager passkeys/screens, manager-made daily codes, real
+  schedule, season stats. Demo code expires Tue Nov 3, 12:00 am NY.
+
 Roles and logins (proposed by Matt 2026-10-27, refined)
 - Fan: no login. Live score, standings, player stats, lineup. First
   names only.
