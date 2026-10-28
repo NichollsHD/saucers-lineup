@@ -385,6 +385,11 @@ Domain and branding (revised 2026-10-27)
   to be supplied).
 - DNS: use a free Cloudflare account. If the domain is bought through
   Cloudflare, no name-server move is needed.
+Domain bought (2026-10-27)
+- SundaySaucers.com registered on Cloudflare by Matt. Auto-renew on,
+  WHOIS privacy on. No hosting set up yet. Next: Nicholls Tech domain
+  (optional), then the build spec.
+
 Roles and logins (proposed by Matt 2026-10-27, refined)
 - Fan: no login. Live score, standings, player stats, lineup. First
   names only.
