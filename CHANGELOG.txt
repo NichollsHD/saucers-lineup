@@ -367,6 +367,19 @@ Official app (decided direction, 2026-10-27)
   name (about $12/yr), one shared scorekeeper code vs one per person,
   manager login (email link / passkey), co-manager, team view public
   vs behind a team code.
+Domain and branding (decided 2026-10-27)
+- Domain: 5thBoro.com (Matt's, registered at GoDaddy; confirm).
+  saucers.5thboro.com = Sunday Saucers home (team view, /score for
+  scorekeepers, /manage for the manager). dugout.5thboro.com = the
+  platform and league hub. Each future team = name.5thboro.com.
+  TheClipboard.com is taken, so skip it; "clipboard" stays the name
+  of the scorekeeper side.
+- Sunday Saucers is a brand, not just a team: logo, colors, sponsor
+  strip on the team site.
+- Every page footer says "Powered by Nicholls Tech" (link and logo
+  to be supplied).
+- Plan: keep the domain at GoDaddy and point its name servers to a
+  free Cloudflare account (copy any existing DNS records first).
 Ideas
 - Until the domain exists, keep the long github.io link in the app.
   The bit.ly link (bit.ly/3ULSHkW) forwards to it and is fine to text.
