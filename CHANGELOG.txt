@@ -455,3 +455,20 @@ Ideas
 - Until the domain exists, keep the long github.io link in the app.
   The bit.ly link (bit.ly/3ULSHkW) forwards to it and is fine to text.
 - Field nicknames are guesses (WB 2, SB 7...). Edit them in Manage fields.
+
+League edition notes (2026-10-28, from the commissioner's reaction to the preview)
+- Chris Ostrow likes the preview and uses GameChanger now, with a
+  quiet interest in moving. Nothing is pushing him away; he hasn't
+  looked at other options. What he wants: league standings, schedule,
+  scorekeeper, live scores, season stats. All five are a yes.
+- Idea: the commissioner enters the schedule and final scores himself,
+  so standings and schedule work from day one even before every team
+  scores live. Team Clipboards add live scoring and stats as they join.
+- Manager guide (Matt): when the app goes league-wide, include a
+  step-by-step guide for managers on adding players, the depth chart
+  and the rest of the setup. Plain language, phone-friendly, with
+  screenshots. Build it alongside the Manager screens in Phase 1 so it
+  can be tested on the Saucers' own setup first.
+- Nov 1 trial run: last regular-season Sunday, two games vs The
+  Underdogs (8:20 and 9:40, Willowbrook 3). Home/away is picked on the
+  morning at the Clipboard. Known gap: no substitutions yet.
