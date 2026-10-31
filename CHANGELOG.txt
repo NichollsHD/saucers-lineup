@@ -469,6 +469,37 @@ League edition notes (2026-10-28, from the commissioner's reaction to the previe
   and the rest of the setup. Plain language, phone-friendly, with
   screenshots. Build it alongside the Manager screens in Phase 1 so it
   can be tested on the Saucers' own setup first.
-- Nov 1 trial run: last regular-season Sunday, two games vs The
-  Underdogs (8:20 and 9:40, Willowbrook 3). Home/away is picked on the
-  morning at the Clipboard. Known gap: no substitutions yet.
+- Trial run: Saturday 2026-10-31, last regular-season day, two games
+  vs The Underdogs (8:20 and 9:40, Willowbrook 3). Home/away picked at
+  the Clipboard on the morning. Done for the trial: pre-game lineup
+  editor, mid-game subs (scorebook-style box score), how-to-score guide.
+
+Sunday Saucers app log (sundaysaucers.com)
+2026-10-31  Trial day result
+- Both games scored live on the Clipboard and finished: game 1 (home)
+  1-11, game 2 (away) 0-7. Scores, hits and player lines all added up.
+- Built the Stats export: a read-only job that copies games, plays and
+  feedback from the live database to a private branch so Claude can
+  read them (Claude's workspace can't reach Cloudflare). Run it from the
+  repo's Actions tab ("Export stats") or ask Claude.
+- Scorekeeper feedback (Michele): could not correct a wrong button or
+  something that was already wrong. Undo only steps back one play at a
+  time (used 15 times in game 1, 8 in game 2).
+2026-10-31  Fix button (shipped before playoffs)
+- Fix > Go back: jump to before any of the last 30 plays, then score it
+  again. The jump is one undoable step.
+- Fix > Fix the board: set outs, runners, runs by inning and team hits
+  directly. Saved as "Scorekeeper fix" in the play-by-play. It does not
+  change player hits, runs or RBI (use Go back for those).
+Next (planned, not built)
+- Pitching stats: innings pitched, hits, runs, earned runs, walks,
+  strikeouts, pitch count if wanted, by pitcher, with a "pitching
+  change" button next to Sub. Needs a defense/pitcher tracker in the
+  game state. Opponent hits were not entered in game 2 (0 hits against
+  on 7 runs), so decide how strictly to record the opponent's at-bats.
+- Season stats: totals and averages per player (AB, H, BB, R, RBI, K,
+  AVG, OBP) across all finished games, plus a Season page on the site
+  built from the same export. Needs a stats table keyed by player id so
+  numbers survive lineup edits. Today's totals are the first data.
+- Playoffs start next week: the Fix button is the priority; pitching
+  and season stats can build alongside once the playoff bracket is set.
