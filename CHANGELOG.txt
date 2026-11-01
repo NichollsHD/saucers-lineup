@@ -491,13 +491,17 @@ Sunday Saucers app log (sundaysaucers.com)
 - Fix > Fix the board: set outs, runners, runs by inning and team hits
   directly. Saved as "Scorekeeper fix" in the play-by-play. It does not
   change player hits, runs or RBI (use Go back for those).
+2026-10-31  Share recap
+- After Final, a Share recap button (Clipboard and the game page) opens
+  the phone's share sheet with the score, line score, hits and who had
+  hits, plus the link to the box score. Falls back to copying the text.
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
   change" button next to Sub. Needs a defense/pitcher tracker in the
   game state. Opponent hits were not entered in game 2 (0 hits against
   on 7 runs), so decide how strictly to record the opponent's at-bats.
-- Season stats: totals and averages per player (AB, H, BB, R, RBI, K,
+- Season stats (moved to next season; only a few games remain): totals and averages per player (AB, H, BB, R, RBI, K,
   AVG, OBP) across all finished games, plus a Season page on the site
   built from the same export. Needs a stats table keyed by player id so
   numbers survive lineup edits. Today's totals are the first data.
