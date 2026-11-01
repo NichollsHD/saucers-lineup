@@ -495,6 +495,10 @@ Sunday Saucers app log (sundaysaucers.com)
 - After Final, a Share recap button (Clipboard and the game page) opens
   the phone's share sheet with the score, line score, hits and who had
   hits, plus the link to the box score. Falls back to copying the text.
+2026-10-31  Traffic monitoring
+- Cloudflare Web Analytics added to the public pages (home, game, league,
+  guide). Not on the Clipboard or the feedback inbox. Cookie-free. View
+  it in the Cloudflare dashboard under Analytics & Logs > Web Analytics.
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
