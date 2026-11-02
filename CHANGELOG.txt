@@ -527,6 +527,16 @@ Sunday Saucers app log (sundaysaucers.com)
   Fallback already planned: dugout.<a Nicholls Tech domain>.
 - Name ideas shelved: Skipper (manager tools), The Card (lineup),
   Harry (live play-by-play, after Harry Kalas).
+2026-11-02  Roster + RSVP on the site
+- Clipboard > Lineup now has a team roster behind it (players table,
+  seeded with the 14 known players). Everyone not in the game shows
+  under Not playing; To lineup / To bench brings them in; a position
+  menu or Not playing button takes them out. New player adds a name to
+  the roster (first name or nickname; shown publicly) and puts them in
+  the lineup. Duplicate names are refused. Still manual: the GitHub
+  app's Who's in is not read by the site. Next: sync Who's in into the
+  site's roster (Skipper / manager screens in the real build), plus
+  rename and retire for roster players.
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
