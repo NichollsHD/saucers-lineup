@@ -499,6 +499,17 @@ Sunday Saucers app log (sundaysaucers.com)
 - Cloudflare Web Analytics added to the public pages (home, game, league,
   guide). Not on the Clipboard or the feedback inbox. Cookie-free. View
   it in the Cloudflare dashboard under Analytics & Logs > Web Analytics.
+2026-11-01  Schedule games ahead of time
+- Clipboard > + Schedule a game: date required; opponent, time, field
+  and map link optional (blank shows as TBD). Home/away can stay
+  "Game day". Edit fills in details later; Delete removes a game that
+  hasn't started. Details lock at the first play. New games get the
+  team's saved batting order plus everyone else from the last game on
+  the bench. Mirrors how Matt posts games in WhatsApp (vs TBD, fill in
+  field/time later in the week).
+- League edition: this becomes the commissioner's scheduling screen.
+- New Clipboard code for the playoffs, valid through Dec 31, 2026
+  (hash only in migration 0010).
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
