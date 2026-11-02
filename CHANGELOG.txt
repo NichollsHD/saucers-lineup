@@ -537,6 +537,15 @@ Sunday Saucers app log (sundaysaucers.com)
   app's Who's in is not read by the site. Next: sync Who's in into the
   site's roster (Skipper / manager screens in the real build), plus
   rename and retire for roster players.
+2026-11-02  Playoffs: Early B Division Championship (from the league flyer)
+- Sat Nov 7 at WB 3. Game 1, 8:30: Saucers vs The Sliders (Sliders
+  home, so we bat first). Game 2, 9:40: winner of game 1 stays on vs
+  The Oilers (Oilers home); we only play it if we win game 1.
+- Rules on the flyer: mercy rules and time limits apply; eliminated
+  after two losses; results carry over to Nov 14, 2026, when the
+  championship concludes. Nov 14 games still to schedule.
+- Gap: the Clipboard has the mercy rule but no game clock or time
+  limit. The scorekeeper ends the game with Final. Consider a reminder.
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
