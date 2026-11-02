@@ -517,6 +517,16 @@ Sunday Saucers app log (sundaysaucers.com)
   matches show as tap-to-pick chips. Manage fields (bottom of All games)
   adds, edits and removes fields. League edition: this becomes the
   league's shared field list.
+2026-11-01  Naming
+- The web app overall is called The Dugout. Interfaces inside it keep
+  their names for now (Clipboard = scorekeeping, Fan view, Manager,
+  Admin, Lineup). Live site branding is unchanged until Matt says.
+- Possible future address: dugout.5thBoro.com. Do NOT use the league's
+  name, logo or domain until the commissioner (Chris) agrees, and the
+  subdomain has to be set up by whoever controls 5thBoro.com's DNS.
+  Fallback already planned: dugout.<a Nicholls Tech domain>.
+- Name ideas shelved: Skipper (manager tools), The Card (lineup),
+  Harry (live play-by-play, after Harry Kalas).
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
