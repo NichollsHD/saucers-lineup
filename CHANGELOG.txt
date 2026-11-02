@@ -510,6 +510,13 @@ Sunday Saucers app log (sundaysaucers.com)
 - League edition: this becomes the commissioner's scheduling screen.
 - New Clipboard code for the playoffs, valid through Dec 31, 2026
   (hash only in migration 0010).
+2026-11-01  Field list with map links
+- Same field list as the lineup app (17 fields, names, nicknames, Google
+  Maps links) now lives in the site's database. Typing a name or
+  nickname in Schedule / Edit / Start a game adds the map link; several
+  matches show as tap-to-pick chips. Manage fields (bottom of All games)
+  adds, edits and removes fields. League edition: this becomes the
+  league's shared field list.
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
