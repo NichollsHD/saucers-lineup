@@ -546,6 +546,20 @@ Sunday Saucers app log (sundaysaucers.com)
   championship concludes. Nov 14 games still to schedule.
 - Gap: the Clipboard has the mercy rule but no game clock or time
   limit. The scorekeeper ends the game with Final. Consider a reminder.
+2026-11-08  Where the ball went (built, tested, NOT live yet; waiting on Matt's go)
+- After a hit or out in play, the Clipboard shows a field: tap where a
+  hit landed or which fielder made the play; ground outs take a second
+  tap for who caught the throw (6-3), or "made the out alone" (3U).
+  Scorebook numbers: 1 P, 2 C, 3 1B, 4 2B, 5 3B, 6 SS, 7 LF, 8 LCF,
+  9 RCF, 10 RF. Big Skip button, Cancel for a wrong result, "Stop
+  asking for this game", and Fix > Where the ball went (both teams /
+  Saucers only / off; default both). Play-by-play gets notes like
+  "doubled to left-center", "(6-3)", "(F7)". Game page gets a Spray
+  chart with chips per player and the opponent.
+- Idea (Matt): turn the Saucers player chips into profile cards with
+  player photos. Only with each player's OK; first names/nicknames
+  stay the rule. Other teams don't need photos; in the league edition,
+  ask Chris to have each manager send a team logo to upload.
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
