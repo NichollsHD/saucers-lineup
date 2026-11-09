@@ -560,6 +560,19 @@ Sunday Saucers app log (sundaysaucers.com)
   player photos. Only with each player's OK; first names/nicknames
   stay the rule. Other teams don't need photos; in the league edition,
   ask Chris to have each manager send a team logo to upload.
+2026-11-08  League edition: divisions by skill level (from Matt)
+- Chris splits the league into divisions by skill (A, B, C), usually a
+  few weeks into the season, based on standings and performance (this
+  fall's playoff was the "Early B Division Championship"). The league
+  edition needs: a season that starts as one pool, then a "split into
+  divisions" step where Chris assigns teams to A/B/C; standings,
+  schedule and playoffs per division; early-season results kept but
+  shown separately. Needed by spring.
+2026-11-08  Test site
+- Pushes to the staging branch deploy a private test copy (own Worker
+  and database, workers.dev address, purple TEST SITE banner, hidden
+  from search, no analytics). Features are tried there first, then
+  merged to main to go live. Result: deploy-status-staging branch.
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
