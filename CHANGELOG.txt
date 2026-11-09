@@ -573,6 +573,20 @@ Sunday Saucers app log (sundaysaucers.com)
   and database, workers.dev address, purple TEST SITE banner, hidden
   from search, no analytics). Features are tried there first, then
   merged to main to go live. Result: deploy-status-staging branch.
+2026-11-09  Nov 14 playoff day + two league-edition ideas
+- Nov 14: game 1 at 8:40 vs The Sliders. Lose -> 9:40 vs The Oilers.
+  Win -> 11:00 vs the winner of Sliders/Oilers. Both possible next
+  games are on the site with "(if we lose G1)" / "(if we win G1)";
+  delete the one that doesn't happen after game 1. Open question for
+  Chris: lose G1 and beat the Oilers, then what at 11:00?
+- Idea: "if win / if lose" games that resolve themselves. When a game
+  goes Final, the matching next game shows up and the other is removed.
+  This is the building block for league brackets.
+- Idea: keep regular season and playoffs separate everywhere: a season
+  type on every game; stats, standings and leaders split (regular
+  season / playoffs / all); schedule grouped by phase; playoff games
+  carry a round or bracket label (e.g. "Early B Division
+  Championship"). Pairs with divisions (A/B/C).
 Next (planned, not built)
 - Pitching stats: innings pitched, hits, runs, earned runs, walks,
   strikeouts, pitch count if wanted, by pitcher, with a "pitching
