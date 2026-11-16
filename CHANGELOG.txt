@@ -12,6 +12,21 @@ published from the app, not code changes. They aren't listed here.
 
 
 ---------------------------------------------------------------------
+v2.0  -  2026-11-16  (retired: moved to SundaySaucers.com)
+---------------------------------------------------------------------
+CHANGED
+- Every page (lineup app and /trial/) shows a full-width banner:
+  "The Saucers app has moved to SundaySaucers.com" with a big
+  "Go to SundaySaucers.com" button.
+- After 5 seconds the page goes to https://sundaysaucers.com on its
+  own. "Stay here" cancels it for the rest of that visit (the tab),
+  so a manager can still use the old board.
+- Home-screen app name is now "Sunday Saucers (moved to
+  SundaySaucers.com)"; start_url points at https://sundaysaucers.com/.
+- Service worker cache bumped to saucers-v14.
+
+
+---------------------------------------------------------------------
 v1.9.2  -  2026-10-27
 ---------------------------------------------------------------------
 CHANGED

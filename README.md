@@ -1,5 +1,7 @@
 # Saucers Lineup
 
+> **Retired.** The Saucers app has moved to **[SundaySaucers.com](https://sundaysaucers.com)**. Every page here shows a banner and sends visitors there after 5 seconds.
+
 Lineup and defense board for the Sunday Saucers. Runs as an installable web app on Android and iPhone.
 
 ## Put it online (GitHub Pages)
